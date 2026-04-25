@@ -43,15 +43,30 @@ function Navbar() {
     }
   }, [dropdownOpen])
 
-    const navItems = isAuthenticated
-      ? [
-          { label: 'Dashboard', href: '/dashboard' },
-        ]
-      : [
-          { label: 'Home', href: '#home', anchor: true },
-          { label: 'How it works', href: '#how-it-works', anchor: true },
-          { label: 'Features', href: '#features', anchor: true },
-        ]
+  let navItems = []
+  if (isAuthenticated) {
+    if (role === 'doctor') {
+      navItems = [
+        { label: 'Dashboard', href: '/doctor/dashboard' },
+        { label: 'Patients', href: '/doctor/patients' },
+        { label: 'Assign', href: '/doctor/assign' },
+        { label: 'Feedback', href: '/doctor/feedback' },
+        { label: 'Connect', href: '/doctor/share' },
+      ]
+    } else if (role === 'patient') {
+      navItems = [
+        { label: 'Dashboard', href: '/dashboard/patient' },
+      ]
+    } else {
+      navItems = [{ label: 'Dashboard', href: '/dashboard' }]
+    }
+  } else {
+    navItems = [
+      { label: 'Home', href: '#home', anchor: true },
+      { label: 'How it works', href: '#how-it-works', anchor: true },
+      { label: 'Features', href: '#features', anchor: true },
+    ]
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[rgba(242,250,248,0.9)] backdrop-blur">
