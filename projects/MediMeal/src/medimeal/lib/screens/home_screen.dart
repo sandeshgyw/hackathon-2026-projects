@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:medimeal/models/active_workflow.dart';
 import 'package:medimeal/models/medications.dart';
 
 import '../models/care_state.dart';
@@ -21,6 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
   WorkflowSuggestion? latestSuggestion;
   CareState? latestCareState;
 
+  List<ActiveWorkflow> activeWorkflows = [];
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +38,27 @@ class _HomeScreenState extends State<HomeScreen> {
       latestSuggestion = result.suggestion;
       latestCareState = result.careState;
     });
+  }
+
+  void activateWorkflow() {
+    if (latestSuggestion == null) return;
+
+    final newWorkflow = ActiveWorkflow(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: latestSuggestion!.title,
+      description: latestSuggestion!.description,
+      status: 'Active',
+    );
+
+    setState(() {
+      activeWorkflows.add(newWorkflow);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Workflow activated'),
+      ),
+    );
   }
 
   @override
@@ -115,15 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(latestSuggestion!.description),
                             const SizedBox(height: 12),
                             ElevatedButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '${latestSuggestion!.actionLabel} clicked',
-                                    ),
-                                  ),
-                                );
-                              },
+                              onPressed: activateWorkflow,
                               child: Text(latestSuggestion!.actionLabel),
                             ),
                           ],
