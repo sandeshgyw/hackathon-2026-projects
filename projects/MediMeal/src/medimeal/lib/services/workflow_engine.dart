@@ -22,17 +22,17 @@ class WorkflowEngine {
       case 'timing_sensitive':
         return WorkflowResult(
           nextStepSummary:
-              'You logged ${medication.name}. A timing-based follow-up is now active.',
+              'You logged ${medication.name}. A timing-aware follow-up window is now active.',
           suggestion: WorkflowSuggestion(
-            title: 'Set next-step reminder',
+            title: 'Set meal timing reminder',
             description:
-                'Would you like the app to create a reminder for the next recommended action window?',
+                'Would you like the app to create a reminder for the next recommended meal window?',
             actionLabel: 'Set Reminder',
           ),
           careState: CareState(
-            summary: 'Timing-sensitive workflow active.',
+            summary: 'Timing-sensitive care flow active.',
             caution:
-                'Your next meal/action should follow the recommended timing window.',
+                'Your next meal suggestion should align with the current timing window.',
             weeklyUsage: 0,
             weeklyLimit: 0,
           ),
@@ -41,16 +41,17 @@ class WorkflowEngine {
       case 'hydration_support':
         return WorkflowResult(
           nextStepSummary:
-              'You logged ${medication.name}. A support routine may help you stay on track today.',
+              'You logged ${medication.name}. A daily support routine can help you stay on track.',
           suggestion: WorkflowSuggestion(
-            title: 'Start support workflow',
+            title: 'Start support routine',
             description:
-                'Would you like the app to set up a spaced reminder routine for today?',
+                'Would you like the app to activate a simple support workflow for today?',
             actionLabel: 'Start Workflow',
           ),
           careState: CareState(
-            summary: 'Support workflow available.',
-            caution: 'A daily support routine can now be activated.',
+            summary: 'Support routine available.',
+            caution:
+                'Today’s guidance can include lighter meal suggestions and adherence support.',
             weeklyUsage: 0,
             weeklyLimit: 0,
           ),
@@ -59,17 +60,17 @@ class WorkflowEngine {
       case 'weekly_limit_tracking':
         return WorkflowResult(
           nextStepSummary:
-              'You logged ${medication.name}. Weekly tracking has been updated.',
+              'You logged ${medication.name}. Adaptive weekly food tracking is now active.',
           suggestion: WorkflowSuggestion(
-            title: 'View adaptive recommendations',
+            title: 'Track weekly limit',
             description:
-                'Future suggestions can now adjust based on this week’s tracked usage.',
-            actionLabel: 'View Tracker',
+                'Would you like the app to adjust future meal suggestions based on this week’s tracked intake?',
+            actionLabel: 'Enable Tracking',
           ),
           careState: CareState(
-            summary: 'Weekly tracker active.',
+            summary: 'Adaptive weekly tracker active.',
             caution:
-                'Future meal guidance may change based on tracked weekly usage.',
+                'Future meal suggestions may become more restrictive as your tracked weekly intake increases.',
             weeklyUsage: 20,
             weeklyLimit: 30,
           ),
