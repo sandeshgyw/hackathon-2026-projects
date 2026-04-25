@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:medimeal/models/active_workflow.dart';
 import 'package:medimeal/models/medications.dart';
+import 'package:medimeal/widgets/care_state_card.dart';
+import 'package:medimeal/widgets/medication_card.dart';
+import 'package:medimeal/widgets/section_title.dart';
+import 'package:medimeal/widgets/summary_card.dart';
+import 'package:medimeal/widgets/workflow_card.dart';
 
 import '../models/care_state.dart';
 
@@ -42,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return '''
 $latestSummary
 
-$currentWorkflowText(workflowCount)
+${currentWorkflowText(workflowCount)}
 
 Care status: $careSummary
 ${caution.isNotEmpty ? '\nCaution: $caution' : ''}
@@ -101,53 +106,14 @@ ${caution.isNotEmpty ? '\nCaution: $caution' : ''}
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Plan My Day',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  buildPlanMyDaySummary(),
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
+            const SectionTitle(title: 'Plan My Day'),
+            SummaryCard(text: buildPlanMyDaySummary()),
             const SizedBox(height: 24),
-            const Text(
-              'Today’s Medications',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
+            const SectionTitle(title: 'Today’s Medications'),
             ...medications.map(
-              (medication) => Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        medication.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Dose: ${medication.dosage}'),
-                      Text('Time: ${medication.time}'),
-                      Text('Instructions: ${medication.instructions}'),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => onMedicationTaken(medication),
-                        child: const Text('Taken'),
-                      ),
-                    ],
-                  ),
-                ),
+              (medication) => MedicationCard(
+                medication: medication,
+                onTaken: () => onMedicationTaken(medication),
               ),
             ),
             const SizedBox(height: 24),
@@ -197,73 +163,19 @@ ${caution.isNotEmpty ? '\nCaution: $caution' : ''}
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: latestCareState == null
-                    ? const Text('No active care state yet.')
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            latestCareState!.summary,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(latestCareState!.caution),
-                          if (latestCareState!.weeklyLimit > 0) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Weekly usage: ${latestCareState!.weeklyUsage}/${latestCareState!.weeklyLimit}',
-                            ),
-                          ],
-                        ],
-                      ),
-              ),
-            ),
+            const SectionTitle(title: 'Care State'),
+            CareStateCard(careState: latestCareState),
             const SizedBox(height: 24),
-            const Text(
-              'Active Workflows',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
+            const SectionTitle(title: 'Active Workflows'),
             if (activeWorkflows.isEmpty)
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('No active workflows yet.'),
-                ),
+              const SummaryCard(
+                text: 'No active workflows yet.',
               )
             else
               ...activeWorkflows.map(
-                (workflow) => Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          workflow.title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(workflow.description),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Status: ${workflow.status}',
-                          style: const TextStyle(fontStyle: FontStyle.italic),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                (workflow) => WorkflowCard(workflow: workflow),
               ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
