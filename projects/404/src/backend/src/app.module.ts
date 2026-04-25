@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AvailabilityModule } from './availability/availability.module';
+import { ChatModule } from './chat/chat.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SpecializationsModule } from './specializations/specializations.module';
 import { MedicineModule } from './medicine/medicine.module';
@@ -14,6 +15,7 @@ import { UsersModule } from './users/users.module';
     AppointmentModule,
     AuthModule,
     AvailabilityModule,
+    ChatModule,
     NotificationsModule,
     SpecializationsModule,
     UsersModule,
