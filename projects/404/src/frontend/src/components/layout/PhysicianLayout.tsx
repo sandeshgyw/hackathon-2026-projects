@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Calendar, Clock, Users, LogOut } from 'lucide-react';
+import { Home, Calendar, Clock, Users, LogOut, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function PhysicianLayout() {
@@ -7,6 +7,7 @@ export default function PhysicianLayout() {
 
   const navItems = [
     { to: '/physician/home', icon: Home, label: 'Dashboard' },
+    { to: '/physician/messages', icon: MessageSquare, label: 'AI Assistant' },
     { to: '/physician/availability', icon: Clock, label: 'Availability' },
     { to: '/physician/appointments', icon: Calendar, label: 'Appointments' },
     { to: '/physician/patients', icon: Users, label: 'Patients' },
