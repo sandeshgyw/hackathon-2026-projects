@@ -5,6 +5,7 @@ import { PatientDashboard } from "@/pages/patient/Dashboard";
 import { Login } from "@/pages/auth/Login";
 import { Signup } from "@/pages/auth/Signup";
 import { Profile } from "@/pages/shared/Profile";
+import { VideoConsultationPage } from "@/pages/shared/VideoConsultation";
 
 export function PatientRoutes() {
   return (
@@ -12,6 +13,12 @@ export function PatientRoutes() {
       {/* Auth isolated from layout headers/footers */}
       <Route path="login" element={<Login />} />
       <Route path="signup" element={<Signup />} />
+
+      {/* Video consultation is full-screen — rendered outside the layout shell */}
+      <Route element={<ProtectedRoute allowedRoles={["patient"]} redirectPath="/patient/login" />}>
+        <Route path="/consultation" element={<VideoConsultationPage />} />
+        <Route path="/consultation/:appointmentId" element={<VideoConsultationPage />} />
+      </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["patient"]} redirectPath="/patient/login" />}>
         <Route element={<PatientLayout />}>

@@ -321,7 +321,7 @@ export function Appointments() {
                               variant="outline" 
                               size="sm"
                               className="bg-purple-50 text-purple-600 hover:bg-purple-100 border-purple-200 px-2"
-                              onClick={() => navigate(`/physician/chat?patientId=${apt.patientId}&action=video`)}
+                              onClick={() => navigate(`/physician/consultation/${apt.id}`)}
                               title="Video Call"
                             >
                               <Video className="w-4 h-4" />

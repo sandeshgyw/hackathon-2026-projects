@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Phone, Video, MoreVertical, Send, Paperclip, Smile } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface ChatWindowProps {
   conversation: any;
@@ -14,6 +15,7 @@ interface ChatWindowProps {
 export function ChatWindow({ conversation, messages, onSendMessage }: ChatWindowProps) {
   const [inputText, setInputText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -63,7 +65,12 @@ export function ChatWindow({ conversation, messages, onSendMessage }: ChatWindow
           <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10 rounded-full text-muted-foreground hover:text-primary transition-colors cursor-pointer">
             <Phone className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10 rounded-full text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 md:h-10 md:w-10 rounded-full text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            onClick={() => navigate(`/physician/consultation/${conversation.id}`)}
+          >
             <Video className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10 rounded-full text-muted-foreground cursor-pointer">
