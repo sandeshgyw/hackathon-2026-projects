@@ -17,6 +17,7 @@ class GeminiMealService {
     CareState? careState,
     Medication? latestMedication,
     String? supportNote,
+    String? weeklyNote,
   }) async {
     if (_apiKey.isEmpty) {
       throw Exception('GEMINI_API_KEY is missing in .env');
@@ -29,6 +30,7 @@ class GeminiMealService {
     final medicationPurpose =
         latestMedication?.instructions ?? 'part of the user’s care routine';
     final routineSupportNote = supportNote ?? '';
+    final routineWeeklyNote = weeklyNote ?? '';
 
     final originalIngredients = evaluation.originalIngredients.join(', ');
     final allowedIngredients = evaluation.allowedIngredients.join(', ');
@@ -58,6 +60,7 @@ USER CONTEXT
 - Care caution: $careCaution
 - Timing note: $timingNote
 - Support routine note: $routineSupportNote
+- Weekly tracking note: $routineWeeklyNote
 - Meal type requested: $mealType
 
 INGREDIENT REVIEW
