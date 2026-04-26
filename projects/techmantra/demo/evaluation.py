@@ -25,10 +25,6 @@ from core.rag import get_rag_context
 from core.llm import run_inference
 from core.triage import triage
 
-# ── TEST CASES ────────────────────────────────────────────────────────
-# Each test case represents a realistic patient scenario.
-# expected_risk is what a clinician would expect — used to measure accuracy.
-# Covers: HIGH emergencies, MEDIUM doctor-needed, LOW home care, edge cases
 
 def load_test_cases():
     test_data_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'test_data', 'test_cases.json')
@@ -36,7 +32,6 @@ def load_test_cases():
         return json.load(f)
 
 TEST_CASES = load_test_cases()
-
 
 
 # ── RUN PIPELINE ──────────────────────────────────────────────────────
@@ -53,8 +48,13 @@ def run_test_case(case):
         entities = extract_entities(case["input"])
 
         # Step 2 — Preprocessing
-        payload = preprocess(case["input"], entities, case["profile"], duration=case.get("ui_duration", "not specified"),
-    ui_severity=case.get("ui_severity", None))
+        payload = preprocess(
+            case["input"],
+            entities,
+            case["profile"],
+            duration=case.get("ui_duration", "not specified"),
+            ui_severity=case.get("ui_severity", None)
+        )
 
         # Step 3 — RAG retrieval
         context = get_rag_context(case["input"], top_k=5)
@@ -71,16 +71,26 @@ def run_test_case(case):
             llm_risk_tier=diagnosis.get("risk_tier")
         )
 
-        # Check if result matches expected
-        matched = risk_tier.upper() == case["expected_risk"].upper()
+        # ── CHECK IF RESULT MATCHES EXPECTED ─────────────────────────
+        # Fallback cases use "UNCERTAIN_OR_HIGH" / "UNCERTAIN_OR_MEDIUM"
+        # meaning either outcome is clinically acceptable
+        expected = case["expected_risk"].upper()
+        actual = risk_tier.upper()
+
+        if "_OR_" in expected:
+            acceptable = [e.strip() for e in expected.split("_OR_")]
+            matched = actual in acceptable
+        else:
+            matched = actual == expected
 
         return {
             "id": case["id"],
             "patient": case["patient"],
             "input": case["input"],
-            "expected_risk": case["expected_risk"],
-            "actual_risk": risk_tier.upper(),
+            "expected_risk": expected,
+            "actual_risk": actual,
             "matched": matched,
+            "rag_fallback_case": "_OR_" in expected,
             "top_condition": diagnosis.get("top_conditions", [{}])[0].get("name", "Unknown"),
             "probability": diagnosis.get("top_conditions", [{}])[0].get("probability", 0),
             "confidence_score": diagnosis.get("confidence_score", 0),
@@ -94,14 +104,15 @@ def run_test_case(case):
         }
 
     except Exception as e:
-        # If pipeline fails for any reason record the error
+        expected = case["expected_risk"].upper()
         return {
             "id": case["id"],
             "patient": case["patient"],
             "input": case["input"],
-            "expected_risk": case["expected_risk"],
+            "expected_risk": expected,
             "actual_risk": "ERROR",
             "matched": False,
+            "rag_fallback_case": "_OR_" in expected,
             "top_condition": "Pipeline Error",
             "probability": 0,
             "confidence_score": 0,
@@ -115,41 +126,53 @@ def run_test_case(case):
         }
 
 
+# ── ACCURACY ──────────────────────────────────────────────────────────
+
 def calculate_accuracy(results):
     """
     Calculates overall and per-tier accuracy from results.
+    Separates regular cases from RAG fallback cases.
     """
-    total = len(results)
-    correct = sum(1 for r in results if r["matched"])
-    errors = sum(1 for r in results if r["error"])
+    regular  = [r for r in results if not r.get("rag_fallback_case")]
+    fallback = [r for r in results if r.get("rag_fallback_case")]
 
-    # Per-tier breakdown
+    total   = len(regular)
+    correct = sum(1 for r in regular if r["matched"])
+    errors  = sum(1 for r in results if r["error"])
+
+    # Per-tier breakdown (regular cases only)
     tiers = ["HIGH", "MEDIUM", "LOW"]
     tier_stats = {}
     for tier in tiers:
-        tier_cases = [r for r in results if r["expected_risk"] == tier]
+        # Match against the first part of expected (e.g. "HIGH" from "HIGH")
+        tier_cases   = [r for r in regular if r["expected_risk"] == tier]
         tier_correct = [r for r in tier_cases if r["matched"]]
         tier_stats[tier] = {
-            "total": len(tier_cases),
-            "correct": len(tier_correct),
+            "total":    len(tier_cases),
+            "correct":  len(tier_correct),
             "accuracy": round(len(tier_correct) / len(tier_cases) * 100, 1) if tier_cases else 0
         }
 
+    # Fallback stats
+    fallback_handled = sum(1 for r in fallback if r["matched"])
+
     return {
-        "total": total,
-        "correct": correct,
-        "errors": errors,
-        "overall_accuracy": round(correct / total * 100, 1),
-        "tier_stats": tier_stats
+        "total":            total,
+        "correct":          correct,
+        "errors":           errors,
+        "overall_accuracy": round(correct / total * 100, 1) if total else 0,
+        "tier_stats":       tier_stats,
+        "fallback_total":               len(fallback),
+        "fallback_handled_correctly":   fallback_handled,
+        "fallback_accuracy":            round(fallback_handled / len(fallback) * 100, 1) if fallback else 0
     }
 
 
+# ── MARKDOWN REPORT ───────────────────────────────────────────────────
+
 def generate_markdown(results, accuracy, run_time):
-    """
-    Generates a clean markdown evaluation report.
-    """
     correct_icon = lambda r: "✅" if r["matched"] else "❌"
-    risk_emoji = {"HIGH": "🚨", "MEDIUM": "⚠️", "LOW": "✅", "ERROR": "💥"}
+    risk_emoji = {"HIGH": "🚨", "MEDIUM": "⚠️", "LOW": "✅", "UNCERTAIN": "❓", "ERROR": "💥"}
 
     lines = []
 
@@ -161,59 +184,79 @@ def generate_markdown(results, accuracy, run_time):
     lines.append(f"**Pipeline:** medspaCy NER → LangChain RAG (ChromaDB) → MedGemma → Triage Engine")
     lines.append("")
 
-    # Accuracy summary
+    # ── ACCURACY SUMMARY ─────────────────────────────────────────────
     lines.append("---")
     lines.append("")
     lines.append("## Accuracy Summary")
     lines.append("")
-    lines.append(f"| Metric | Value |")
-    lines.append(f"|---|---|")
-    lines.append(f"| Total Test Cases | {accuracy['total']} |")
+    lines.append("| Metric | Value |")
+    lines.append("|---|---|")
+    lines.append(f"| Total Test Cases (regular) | {accuracy['total']} |")
     lines.append(f"| Correct Risk Tier | {accuracy['correct']} |")
     lines.append(f"| Pipeline Errors | {accuracy['errors']} |")
     lines.append(f"| **Overall Accuracy** | **{accuracy['overall_accuracy']}%** |")
     lines.append("")
 
-    # Per-tier accuracy
+    # ── RAG FALLBACK SECTION ─────────────────────────────────────────
+    lines.append("### RAG Fallback Behavior (No Source Coverage)")
+    lines.append("")
+    lines.append("| Metric | Value |")
+    lines.append("|---|---|")
+    lines.append(f"| Fallback Test Cases | {accuracy['fallback_total']} |")
+    lines.append(f"| Correctly Handled | {accuracy['fallback_handled_correctly']} |")
+    lines.append(f"| Fallback Accuracy | {accuracy['fallback_accuracy']}% |")
+    lines.append("")
+    lines.append("*Fallback cases accept UNCERTAIN or the clinically correct tier as valid outcomes.*")
+    lines.append("")
+
+    # ── PER-TIER ACCURACY ─────────────────────────────────────────────
     lines.append("### Accuracy by Risk Tier")
     lines.append("")
     lines.append("| Risk Tier | Test Cases | Correct | Accuracy |")
     lines.append("|---|---|---|---|")
     for tier, stats in accuracy["tier_stats"].items():
         emoji = risk_emoji.get(tier, "")
-        lines.append(
-            f"| {emoji} {tier} | {stats['total']} | {stats['correct']} | {stats['accuracy']}% |"
-        )
+        lines.append(f"| {emoji} {tier} | {stats['total']} | {stats['correct']} | {stats['accuracy']}% |")
     lines.append("")
 
-    # Full results table
+    # ── DETAILED RESULTS TABLE ────────────────────────────────────────
     lines.append("---")
     lines.append("")
     lines.append("## Detailed Results")
     lines.append("")
+
+    # Regular cases
+    lines.append("### Regular Cases (RAG Source Coverage)")
+    lines.append("")
     lines.append("| # | Patient | Symptom Input | Expected | Got | Match | Top Condition | Confidence |")
     lines.append("|---|---|---|---|---|---|---|---|")
-
-    for r in results:
+    for r in [r for r in results if not r.get("rag_fallback_case")]:
         input_short = r["input"][:60] + "..." if len(r["input"]) > 60 else r["input"]
-        match_icon = correct_icon(r)
         expected_display = f"{risk_emoji.get(r['expected_risk'], '')} {r['expected_risk']}"
-        actual_display = f"{risk_emoji.get(r['actual_risk'], '')} {r['actual_risk']}"
-
+        actual_display   = f"{risk_emoji.get(r['actual_risk'],   '')} {r['actual_risk']}"
         lines.append(
-            f"| {r['id']} "
-            f"| {r['patient']} "
-            f"| {input_short} "
-            f"| {expected_display} "
-            f"| {actual_display} "
-            f"| {match_icon} "
-            f"| {r['top_condition']} ({r['probability']}%) "
-            f"| {r['confidence_score']:.0%} |"
+            f"| {r['id']} | {r['patient']} | {input_short} "
+            f"| {expected_display} | {actual_display} | {correct_icon(r)} "
+            f"| {r['top_condition']} ({r['probability']}%) | {r['confidence_score']:.0%} |"
         )
-
     lines.append("")
 
-    # NER performance section
+    # Fallback cases
+    lines.append("### Fallback Cases (No RAG Source — Testing Graceful Degradation)")
+    lines.append("")
+    lines.append("| # | Patient | Symptom Input | Acceptable Outcomes | Got | Handled | Top Condition | Confidence |")
+    lines.append("|---|---|---|---|---|---|---|---|")
+    for r in [r for r in results if r.get("rag_fallback_case")]:
+        input_short = r["input"][:60] + "..." if len(r["input"]) > 60 else r["input"]
+        actual_display = f"{risk_emoji.get(r['actual_risk'], '')} {r['actual_risk']}"
+        lines.append(
+            f"| {r['id']} | {r['patient']} | {input_short} "
+            f"| {r['expected_risk']} | {actual_display} | {correct_icon(r)} "
+            f"| {r['top_condition']} ({r['probability']}%) | {r['confidence_score']:.0%} |"
+        )
+    lines.append("")
+
+    # ── NER PERFORMANCE ───────────────────────────────────────────────
     lines.append("---")
     lines.append("")
     lines.append("## NER Pipeline Performance")
@@ -222,38 +265,31 @@ def generate_markdown(results, accuracy, run_time):
     lines.append("")
     lines.append("| # | Input (short) | Symptoms Extracted | Negations Detected | NER Severity | RAG Chunks |")
     lines.append("|---|---|---|---|---|---|")
-
     for r in results:
         input_short = r["input"][:50] + "..." if len(r["input"]) > 50 else r["input"]
-        symptoms = ", ".join(r["symptoms_extracted"][:3]) if r["symptoms_extracted"] else "none"
-        negations = ", ".join(r["negations_detected"]) if r["negations_detected"] else "none"
+        symptoms   = ", ".join(r["symptoms_extracted"][:3]) if r["symptoms_extracted"] else "none"
+        negations  = ", ".join(r["negations_detected"])     if r["negations_detected"]  else "none"
         lines.append(
-            f"| {r['id']} "
-            f"| {input_short} "
-            f"| {symptoms} "
-            f"| {negations} "
-            f"| {r['ner_severity'].upper()} "
-            f"| {r['rag_chunks']} |"
+            f"| {r['id']} | {input_short} | {symptoms} "
+            f"| {negations} | {r['ner_severity'].upper()} | {r['rag_chunks']} |"
         )
-
     lines.append("")
 
-    # Detailed case breakdowns
+    # ── CASE-BY-CASE BREAKDOWN ────────────────────────────────────────
     lines.append("---")
     lines.append("")
     lines.append("## Case-by-Case Breakdown")
     lines.append("")
-
     for r in results:
-        match_icon = correct_icon(r)
-        lines.append(f"### Case {r['id']} {match_icon} — {r['expected_risk']} Risk")
+        fallback_label = " *(RAG Fallback)*" if r.get("rag_fallback_case") else ""
+        lines.append(f"### Case {r['id']} {correct_icon(r)} — {r['expected_risk']} Risk{fallback_label}")
         lines.append(f"**Patient:** {r['patient']}")
         lines.append(f"**Clinical Note:** {r['clinical_note']}")
         lines.append(f"**Input:** {r['input']}")
         lines.append("")
-        lines.append(f"| Field | Value |")
-        lines.append(f"|---|---|")
-        lines.append(f"| Expected Risk | {risk_emoji.get(r['expected_risk'], '')} {r['expected_risk']} |")
+        lines.append("| Field | Value |")
+        lines.append("|---|---|")
+        lines.append(f"| Expected Risk | {r['expected_risk']} |")
         lines.append(f"| Actual Risk | {risk_emoji.get(r['actual_risk'], '')} {r['actual_risk']} |")
         lines.append(f"| Top Condition | {r['top_condition']} ({r['probability']}%) |")
         lines.append(f"| Confidence Score | {r['confidence_score']:.0%} |")
@@ -266,7 +302,7 @@ def generate_markdown(results, accuracy, run_time):
             lines.append(f"| Error | {r['error']} |")
         lines.append("")
 
-    # Methodology note
+    # ── METHODOLOGY ───────────────────────────────────────────────────
     lines.append("---")
     lines.append("")
     lines.append("## Methodology")
@@ -282,7 +318,14 @@ def generate_markdown(results, accuracy, run_time):
         "Expected risk tiers were assigned based on standard clinical triage guidelines. "
         "HIGH = emergency requiring immediate care or 911. "
         "MEDIUM = requires physician evaluation within 24 hours. "
-        "LOW = manageable with home care and self-monitoring."
+        "LOW = manageable with home care and self-monitoring. "
+        "UNCERTAIN = model confidence too low to make a reliable assessment."
+    )
+    lines.append("")
+    lines.append(
+        "RAG Fallback cases test graceful degradation — scenarios where no RAG source covers "
+        "the condition. These accept either UNCERTAIN (low confidence fallback) or the "
+        "clinically correct tier (triage red flag logic) as valid outcomes."
     )
     lines.append("")
     lines.append(
@@ -299,6 +342,7 @@ def generate_markdown(results, accuracy, run_time):
 
 
 # ── MAIN ──────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
 
     print("=" * 60)
@@ -309,46 +353,44 @@ if __name__ == "__main__":
     print("=" * 60)
 
     run_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    results = []
+    results  = []
 
+    # for case in [c for c in TEST_CASES if c["id"] >= 38]:
     for case in TEST_CASES:
         result = run_test_case(case)
         results.append(result)
 
-        # Print live result so you can see progress
-        icon = "✅" if result["matched"] else "❌"
+        icon     = "✅" if result["matched"] else "❌"
+        fallback = " [FALLBACK]" if result.get("rag_fallback_case") else ""
         print(
             f"  {icon} Case {result['id']:02d} | "
-            f"Expected: {result['expected_risk']:8} | "
-            f"Got: {result['actual_risk']:8} | "
-            f"{result['top_condition'][:30]}"
+            f"Expected: {result['expected_risk']:25} | "
+            f"Got: {result['actual_risk']:10} | "
+            f"{result['top_condition'][:30]}{fallback}"
         )
 
-    # Calculate accuracy
     accuracy = calculate_accuracy(results)
 
     print("")
     print("=" * 60)
-    print(f"OVERALL ACCURACY: {accuracy['overall_accuracy']}%  "
-          f"({accuracy['correct']}/{accuracy['total']} correct)")
+    print(f"OVERALL ACCURACY: {accuracy['overall_accuracy']}%  ({accuracy['correct']}/{accuracy['total']} regular cases)")
+    print(f"FALLBACK HANDLING: {accuracy['fallback_accuracy']}%  ({accuracy['fallback_handled_correctly']}/{accuracy['fallback_total']} fallback cases)")
     print("=" * 60)
     for tier, stats in accuracy["tier_stats"].items():
         print(f"  {tier:8} accuracy: {stats['accuracy']}%  ({stats['correct']}/{stats['total']})")
 
-    # Generate and save markdown report
     markdown = generate_markdown(results, accuracy, run_time)
 
     output_path = os.path.join(os.path.dirname(__file__), "evaluation_results.md")
     with open(output_path, "w") as f:
         f.write(markdown)
 
-    # Also save raw JSON results for reference
     json_path = os.path.join(os.path.dirname(__file__), "evaluation_results.json")
     with open(json_path, "w") as f:
         json.dump({
             "run_time": run_time,
             "accuracy": accuracy,
-            "results": results
+            "results":  results
         }, f, indent=2)
 
     print("")
