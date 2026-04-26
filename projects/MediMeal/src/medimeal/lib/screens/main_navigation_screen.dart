@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:medimeal/models/hydration_workflow.dart';
+import 'package:medimeal/models/meal_plan.dart';
 import 'package:medimeal/models/medications.dart';
 import 'package:medimeal/models/timing_workflow.dart';
 import 'package:medimeal/models/user_medication.dart';
+import 'package:medimeal/models/weekly_tracking_workflow.dart';
 import 'package:medimeal/screens/add_medication_screen.dart';
 import 'package:medimeal/screens/meals_tab.dart';
 import 'package:medimeal/services/hydration_workflow_service.dart';
 import 'package:medimeal/services/notification_service.dart';
 import 'package:medimeal/services/timing_workflow_service.dart';
+import 'package:medimeal/services/weekly_meal_impact_service.dart';
+import 'package:medimeal/services/weekly_tracking_workflow_service.dart';
+import 'package:medimeal/widgets/app_snackbar.dart';
 
 import '../models/active_workflow.dart';
 import '../models/care_state.dart';
@@ -34,7 +39,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   TimingWorkflow? activeTimingWorkflow;
   HydrationWorkflow? activeHydrationWorkflow;
+  WeeklyTrackingWorkflow? activeWeeklyTrackingWorkflow;
   Medication? latestMedication;
+
+  bool shouldOfferHydrationRoutine = false;
+  bool shouldOfferWeeklyTracking = false;
 
   String? latestSummary;
   WorkflowSuggestion? latestSuggestion;
@@ -62,18 +71,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         userMedications.add(result);
       });
 
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${result.template.name} added with daily reminder at ${result.reminderTimeLabel}',
-          ),
-        ),
+
+      await NotificationService.scheduleDailyMedicationReminder(
+        id: result.id.hashCode,
+        medicationName: result.template.name,
+        hour: result.reminderHour,
+        minute: result.reminderMinute,
+      );
+
+      AppSnackbar.success(
+        context,
+        '${result.template.name} added with daily reminder at ${result.reminderTimeLabel}',
       );
     }
   }
 
   void onMedicationTaken(UserMedication userMedication) {
+    _markMedicationTaken(userMedication.id);
     final medication = Medication(
       id: userMedication.id,
       name: userMedication.template.name,
@@ -91,14 +105,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     final result = WorkflowEngine.processMedicationTaken(medication);
 
-    TimingWorkflow? timingWorkflow;
+    TimingWorkflow? newTimingWorkflow = activeTimingWorkflow;
 
     if (medication.workflowType == 'timing_sensitive' &&
         medication.autoStartWorkflow) {
-      timingWorkflow = TimingWorkflowService.createFromMedication(medication);
+      newTimingWorkflow =
+          TimingWorkflowService.createFromMedication(medication);
 
       Future.delayed(
-        timingWorkflow.eatAfter.difference(DateTime.now()),
+        newTimingWorkflow.eatAfter.difference(DateTime.now()),
         () async {
           await NotificationService.showTimingReadyNotification(
             medicationName: medication.name,
@@ -115,46 +130,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       latestSummary = result.nextStepSummary;
       latestSuggestion = result.suggestion;
       latestCareState = result.careState;
-      activeTimingWorkflow = timingWorkflow;
+      activeTimingWorkflow = newTimingWorkflow;
+
+      if (medication.workflowType == 'support_routine' &&
+          activeHydrationWorkflow == null) {
+        shouldOfferHydrationRoutine = true;
+      }
+
+      if (medication.workflowType == 'weekly_tracking' &&
+          activeWeeklyTrackingWorkflow == null) {
+        shouldOfferWeeklyTracking = true;
+      }
+
       selectedIndex = 0;
     });
-  }
-
-  void startHydrationRoutine() {
-    if (latestMedication == null) return;
-
-    final workflow = HydrationWorkflowService.create(
-      medicationName: latestMedication!.name,
-    );
-
-    setState(() {
-      activeHydrationWorkflow = workflow;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Hydration routine started')),
-    );
-  }
-
-  void logHydrationGlass() {
-    if (activeHydrationWorkflow == null) return;
-
-    final updated =
-        HydrationWorkflowService.logOneGlass(activeHydrationWorkflow!);
-
-    setState(() {
-      activeHydrationWorkflow = updated;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          updated.isCompleted
-              ? 'Hydration goal completed for today'
-              : 'Logged 1 glass',
-        ),
-      ),
-    );
   }
 
   void activateWorkflow() {
@@ -171,9 +160,77 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       activeWorkflows.add(newWorkflow);
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workflow activated')),
+    AppSnackbar.success(context, 'Workflow activated');
+  }
+
+  void startHydrationRoutine() {
+    final workflow = HydrationWorkflowService.create(
+      medicationName: 'Amoxicillin',
     );
+
+    setState(() {
+      activeHydrationWorkflow = workflow;
+      shouldOfferHydrationRoutine = false;
+    });
+
+    AppSnackbar.info(context, 'Hydration routine started');
+  }
+
+  void logHydrationGlass() {
+    if (activeHydrationWorkflow == null) return;
+
+    final updated =
+        HydrationWorkflowService.logOneGlass(activeHydrationWorkflow!);
+
+    setState(() {
+      activeHydrationWorkflow = updated;
+    });
+
+    if (updated.isCompleted) {
+      AppSnackbar.success(context, 'Hydration goal completed for today');
+    } else {
+      AppSnackbar.info(context, 'Logged 1 glass');
+    }
+  }
+
+  void startWeeklyTracking() {
+    final workflow = WeeklyTrackingWorkflowService.create(
+      medicationName: 'Allopurinol',
+    );
+
+    setState(() {
+      activeWeeklyTrackingWorkflow = workflow;
+      shouldOfferWeeklyTracking = false;
+    });
+
+    AppSnackbar.info(context, 'Weekly tracking started');
+  }
+
+  void logMealForWeeklyTracking(List<String> ingredientsUsed) {
+    if (activeWeeklyTrackingWorkflow == null) return;
+
+    final impact = WeeklyMealImpactService.evaluate(ingredientsUsed);
+    final updated = WeeklyTrackingWorkflowService.applyMealImpact(
+      activeWeeklyTrackingWorkflow!,
+      impact.addedScore,
+    );
+
+    setState(() {
+      activeWeeklyTrackingWorkflow = updated;
+    });
+
+    AppSnackbar.warning(context, impact.summary);
+  }
+
+  void _markMedicationTaken(String medicationId) {
+    final index = userMedications.indexWhere((m) => m.id == medicationId);
+    if (index == -1) return;
+
+    setState(() {
+      userMedications[index] = userMedications[index].copyWith(
+        isTakenToday: true,
+      );
+    });
   }
 
   @override
@@ -187,8 +244,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         latestCareState: latestCareState,
         activeTimingWorkflow: activeTimingWorkflow,
         activeHydrationWorkflow: activeHydrationWorkflow,
+        activeWeeklyTrackingWorkflow: activeWeeklyTrackingWorkflow,
+        shouldOfferHydrationRoutine: shouldOfferHydrationRoutine,
+        shouldOfferWeeklyTracking: shouldOfferWeeklyTracking,
         onStartHydrationRoutine: startHydrationRoutine,
         onLogHydrationGlass: logHydrationGlass,
+        onStartWeeklyTracking: startWeeklyTracking,
       ),
       MedicationsTab(
         medications: userMedications,
@@ -203,6 +264,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         latestMedication: latestMedication,
         activeTimingWorkflow: activeTimingWorkflow,
         activeHydrationWorkflow: activeHydrationWorkflow,
+        activeWeeklyTrackingWorkflow: activeWeeklyTrackingWorkflow,
+        onLogMealForWeeklyTracking: logMealForWeeklyTracking,
       ),
     ];
 

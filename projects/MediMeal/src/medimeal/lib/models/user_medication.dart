@@ -6,6 +6,7 @@ class UserMedication {
   final String reminderTimeLabel;
   final int reminderHour;
   final int reminderMinute;
+  final bool isTakenToday;
 
   const UserMedication({
     required this.id,
@@ -13,5 +14,24 @@ class UserMedication {
     required this.reminderTimeLabel,
     required this.reminderHour,
     required this.reminderMinute,
+    required this.isTakenToday,
   });
+
+  UserMedication copyWith({
+    String? id,
+    MedicineTemplate? template,
+    String? reminderTimeLabel,
+    int? reminderHour,
+    int? reminderMinute,
+    bool? isTakenToday,
+  }) {
+    return UserMedication(
+      id: id ?? this.id,
+      template: template ?? this.template,
+      reminderTimeLabel: reminderTimeLabel ?? this.reminderTimeLabel,
+      reminderHour: reminderHour ?? this.reminderHour,
+      reminderMinute: reminderMinute ?? this.reminderMinute,
+      isTakenToday: isTakenToday ?? this.isTakenToday,
+    );
+  }
 }

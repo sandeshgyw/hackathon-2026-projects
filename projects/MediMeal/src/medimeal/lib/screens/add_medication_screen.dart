@@ -48,6 +48,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       reminderTimeLabel: _formatTime(selectedTime),
       reminderHour: selectedTime.hour,
       reminderMinute: selectedTime.minute,
+      isTakenToday: false,
     );
 
     Navigator.pop(context, newMedication);
@@ -163,9 +164,13 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 ),
               ),
             const SizedBox(height: 28),
-            ElevatedButton(
-              onPressed: selectedTemplate == null ? null : _saveMedication,
-              child: const Text('Save Medicine'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: selectedTemplate == null ? null : _saveMedication,
+                icon: const Icon(Icons.add_circle_outline),
+                label: const Text('Add to My Medicines'),
+              ),
             ),
           ],
         ),
