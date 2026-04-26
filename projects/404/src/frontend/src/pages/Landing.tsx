@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { useEffect } from "react"
 import {
 	ArrowRight,
 	BellRing,
 	ClipboardList,
-	Menu,
 	ShieldCheck,
 	Sparkles,
 	Stethoscope,
 	UserRound,
-	X,
 } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/store"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -24,114 +24,21 @@ const navItems = [
 ]
 
 export function Landing() {
-	const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-	const [isScrolled, setIsScrolled] = useState(false)
-	const location = useLocation()
+	const { user } = useSelector((state: RootState) => state.auth)
+	const navigate = useNavigate()
 
 	useEffect(() => {
-		const handleScroll = () => {
-			setIsScrolled(window.scrollY > 36)
+		if (user) {
+			const dashboardPath = user.role?.toLowerCase() === 'doctor' 
+				? '/physician' 
+				: `/${user.role?.toLowerCase() || 'patient'}`;
+			navigate(dashboardPath, { replace: true });
 		}
-
-		handleScroll()
-		window.addEventListener("scroll", handleScroll)
-
-		return () => window.removeEventListener("scroll", handleScroll)
-	}, [])
+	}, [user, navigate])
 
 	return (
-		<div className="min-h-screen bg-black text-white">
-			<header
-				className={cn(
-					"fixed inset-x-0 top-0 z-50 border-b transition-all duration-300",
-					isScrolled
-						? "border-emerald-900/10 bg-white/72 backdrop-blur-md"
-						: "border-transparent bg-transparent"
-				)}
-			>
-				<div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-8 lg:px-10">
-					<Link to="/" className={cn("flex items-center gap-2 transition-opacity hover:opacity-80", isScrolled ? "text-emerald-900" : "text-white")}>
-						<div className={cn("flex h-9 w-9 items-center justify-center rounded-full backdrop-blur", isScrolled ? "border border-emerald-900/15 bg-emerald-50" : "border border-white/15 bg-white/10")}>
-							<span className="text-sm font-semibold">H</span>
-						</div>
-						<span className="text-lg font-semibold tracking-tight">HealthCore</span>
-					</Link>
-
-					<nav className="hidden md:flex items-center gap-6">
-						{navItems.map((item) => {
-							const isActive = location.pathname === item.path
-
-							return (
-								<Link
-									key={item.path}
-									to={item.path}
-									className={cn(
-										"relative px-1 py-2 text-[15px] font-semibold transition-colors duration-200",
-										isActive
-											? isScrolled ? "text-emerald-900" : "text-white"
-											: isScrolled ? "text-slate-700 hover:text-emerald-900" : "text-white/80 hover:text-white"
-									)}
-								>
-									{item.name}
-									{isActive && <span className={cn("absolute -bottom-1 left-0 h-0.5 w-full rounded-full", isScrolled ? "bg-emerald-700" : "bg-white")} />}
-								</Link>
-							)
-						})}
-					</nav>
-
-
-
-					<div className="hidden md:flex items-center gap-3">
-						<Link to="/patient/login" className={cn("text-sm font-semibold transition-colors", isScrolled ? "text-slate-700 hover:text-emerald-900" : "text-white/80 hover:text-white")}>
-							Log in
-						</Link>
-						<Button asChild className={cn("h-10 rounded-xl px-5", isScrolled ? "bg-emerald-700 text-white hover:bg-emerald-800" : "bg-white text-[#1a3321] hover:bg-white/90")}>
-							<Link to="/patient/signup">Get Started</Link>
-						</Button>
-					</div>
-
-					<Button
-						variant="ghost"
-						size="icon"
-						className={cn("md:hidden hover:bg-white/10 hover:text-white", isScrolled ? "text-slate-700" : "text-white")}
-						onClick={() => setMobileMenuOpen((value) => !value)}
-					>
-						{mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-					</Button>
-				</div>
-
-				{mobileMenuOpen && (
-					<div className="border-t border-emerald-900/10 bg-white/95 px-4 py-4 backdrop-blur-md md:hidden">
-						<div className="flex flex-col gap-2">
-							{navItems.map((item) => (
-								<Link
-									key={item.path}
-									to={item.path}
-									className="rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900"
-									onClick={() => setMobileMenuOpen(false)}
-								>
-									{item.name}
-								</Link>
-							))}
-							<div className="my-2 h-px bg-emerald-900/10" />
-							<Link
-								to="/patient/login"
-								className="rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900"
-								onClick={() => setMobileMenuOpen(false)}
-							>
-								Log in
-							</Link>
-							<Button asChild className="mt-2 h-11 rounded-full bg-emerald-700 px-5 text-white hover:bg-emerald-800">
-								<Link to="/patient/signup" onClick={() => setMobileMenuOpen(false)}>
-									Get Started
-								</Link>
-							</Button>
-						</div>
-					</div>
-				)}
-			</header>
-
-			<main className="relative overflow-hidden">
+		<div className="bg-black text-white">
+			<main className="relative -mt-16 overflow-hidden">
 				<section className="relative min-h-screen overflow-hidden">
 					<video
 						className="absolute inset-0 h-full w-full object-cover"
@@ -209,46 +116,46 @@ export function Landing() {
 					</div>
 				</section>
 
-				<section className="relative z-10 bg-[#0a1c13] px-6 py-20 md:px-10 lg:px-12">
+				<section className="relative z-10 bg-white px-6 py-20 md:px-10 lg:px-12">
 					<div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3">
-						<div className="rounded-2xl border border-white/10 bg-[#0f2a1d] p-6">
-							<UserRound className="h-6 w-6 text-[#9be2b4]" />
-							<h3 className="mt-4 text-xl font-semibold text-white">For Patients</h3>
-							<p className="mt-2 text-sm leading-relaxed text-white/75">
+						<div className="rounded-2xl border border-emerald-900/10 bg-[#f7fbf8] p-6 shadow-sm">
+							<UserRound className="h-6 w-6 text-emerald-700" />
+							<h3 className="mt-4 text-xl font-semibold text-slate-900">For Patients</h3>
+							<p className="mt-2 text-sm leading-relaxed text-slate-600">
 								Understand exactly what to do after your appointment and why each step matters.
 							</p>
 						</div>
-						<div className="rounded-2xl border border-white/10 bg-[#0f2a1d] p-6">
-							<Stethoscope className="h-6 w-6 text-[#9be2b4]" />
-							<h3 className="mt-4 text-xl font-semibold text-white">For Clinicians</h3>
-							<p className="mt-2 text-sm leading-relaxed text-white/75">
+						<div className="rounded-2xl border border-emerald-900/10 bg-[#f7fbf8] p-6 shadow-sm">
+							<Stethoscope className="h-6 w-6 text-emerald-700" />
+							<h3 className="mt-4 text-xl font-semibold text-slate-900">For Clinicians</h3>
+							<p className="mt-2 text-sm leading-relaxed text-slate-600">
 								Improve adherence by converting guidance into trackable workflows patients can follow.
 							</p>
 						</div>
-						<div className="rounded-2xl border border-white/10 bg-[#0f2a1d] p-6">
-							<ShieldCheck className="h-6 w-6 text-[#9be2b4]" />
-							<h3 className="mt-4 text-xl font-semibold text-white">For Admins</h3>
-							<p className="mt-2 text-sm leading-relaxed text-white/75">
+						<div className="rounded-2xl border border-emerald-900/10 bg-[#f7fbf8] p-6 shadow-sm">
+							<ShieldCheck className="h-6 w-6 text-emerald-700" />
+							<h3 className="mt-4 text-xl font-semibold text-slate-900">For Admins</h3>
+							<p className="mt-2 text-sm leading-relaxed text-slate-600">
 								Monitor pathway completion and quality outcomes with a system designed for care execution.
 							</p>
 						</div>
 					</div>
 				</section>
 
-				<section className="relative z-10 bg-[#08150f] px-6 pb-20 pt-12 md:px-10 lg:px-12">
-					<div className="mx-auto max-w-7xl rounded-3xl border border-white/10 bg-gradient-to-r from-[#103323] to-[#1a5138] p-8 md:p-10">
+				<section className="relative z-10 bg-[#f7fbf8] px-6 pb-20 pt-12 md:px-10 lg:px-12">
+					<div className="mx-auto max-w-7xl rounded-3xl border border-emerald-900/10 bg-white p-8 md:p-10 shadow-sm">
 						<div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
 							<div className="max-w-2xl">
-								<p className="text-xs font-medium uppercase tracking-[0.28em] text-[#c8f3d9]">Ready To Launch</p>
-								<h3 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">
+								<p className="text-xs font-medium uppercase tracking-[0.28em] text-emerald-700">Ready To Launch</p>
+								<h3 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
 									Move from "what happened" to "what happens next".
 								</h3>
 							</div>
 							<div className="flex flex-wrap gap-3">
-								<Button asChild size="lg" className="h-11 rounded-xl bg-white px-6 text-[#123925] hover:bg-white/90">
+								<Button asChild size="lg" className="h-11 rounded-xl bg-emerald-700 px-6 text-white hover:bg-emerald-800">
 									<Link to="/patient/signup">Create Account</Link>
 								</Button>
-								<Button asChild size="lg" variant="outline" className="h-11 rounded-xl border-white/40 bg-white/10 px-6 text-white hover:bg-white/20 hover:text-white">
+								<Button asChild size="lg" variant="outline" className="h-11 rounded-xl border-slate-200 bg-white px-6 text-slate-700 hover:bg-slate-50 hover:text-slate-900">
 									<Link to="/patient/login">Open Portal</Link>
 								</Button>
 							</div>

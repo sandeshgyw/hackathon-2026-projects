@@ -12,15 +12,15 @@ export function PublicRoutes() {
   return (
     <Routes>
       <Route path="login" element={<Login />} />
-      <Route path="/" element={<Landing />} />
 
       {/* Dev-only demo — remove before production */}
       <Route path="/demo/consultation" element={<VideoConsultationDemo />} />
 
       <Route element={<PublicLayout />}>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

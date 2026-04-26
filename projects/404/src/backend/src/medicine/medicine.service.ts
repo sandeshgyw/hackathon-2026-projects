@@ -50,6 +50,7 @@ export class MedicineService {
       page: query.page,
       pageSize: query.pageSize,
     });
+
     const where: Prisma.MedicineWhereInput = {
       ...this.buildSearchWhere(query.search),
       ...(query.category ? { category: query.category as any } : {}),

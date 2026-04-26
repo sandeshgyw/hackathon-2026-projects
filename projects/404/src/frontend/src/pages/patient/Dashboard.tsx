@@ -1,147 +1,219 @@
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-
-const PATIENT_NAME = "John"
-
-const HERO_IMAGE_URL = "/doctor.png"
-const WELLNESS_IMAGE_URL = "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200&auto=format&fit=crop"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/store"
+import { 
+  Calendar, 
+  Activity, 
+  Pill, 
+  MessageSquare, 
+  ChevronRight, 
+  Heart, 
+  Clock, 
+  TrendingUp, 
+  Plus,
+  ArrowUpRight
+} from "lucide-react"
 
 export function PatientDashboard() {
+  const { user } = useSelector((state: RootState) => state.auth)
+  const PATIENT_NAME = user?.email?.split('@')[0] || "Patient"
+
   return (
-    <div className="mx-auto max-w-6xl space-y-10 pb-12 scroll-smooth">
-      <section
-        id="overview"
-        className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 scroll-mt-36 overflow-hidden rounded-none border-b border-slate-200 bg-white shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-700"
-      >
-        <div className="grid items-center gap-12 px-4 py-12 md:py-16 lg:py-20 md:grid-cols-[1.05fr_0.95fr] md:px-10 lg:px-12 xl:px-16 mx-auto max-w-7xl">
-          <div className="order-2 flex flex-col justify-center space-y-7 md:order-1">
-            <span className="inline-flex w-fit items-center rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-amber-700 shadow-sm">
-              Patient Care Home
-            </span>
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-400">Hello, {PATIENT_NAME}</p>
-            <h1 className="max-w-xl text-5xl font-semibold leading-[0.98] tracking-tight text-slate-900 md:text-6xl xl:text-7xl">
-              Align Your Care
-              <br />
-              With Clear Next Steps
-            </h1>
-            <p className="max-w-lg text-lg leading-relaxed text-slate-600 md:text-xl">
-              A calm place for your care journey. Manage appointments, connect with doctors, and stay on top of your health in one clean space.
-            </p>
-            <div className="flex flex-wrap gap-4 pt-2">
-              <Button className="h-14 rounded-2xl bg-slate-900 px-7 text-white shadow-[0_18px_40px_rgba(15,23,42,0.16)] hover:bg-slate-800">
-                Book Appointment
-              </Button>
-              <Button variant="outline" className="h-14 rounded-2xl border-slate-300 bg-white px-7 text-slate-900 hover:bg-slate-50">
-                View Care Plan
-              </Button>
-            </div>
-          </div>
-
-          <div className="order-1 flex items-center justify-center md:order-2 relative mt-8 md:mt-0">
-            {/* Blue-themed animated background glowing blobs */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[600px] max-h-[600px] pointer-events-none">
-              <div className="absolute top-0 left-0 w-[26rem] h-[26rem] bg-blue-600 rounded-full filter blur-[120px] opacity-40 animate-[spin_8s_linear_infinite]"></div>
-              <div className="absolute top-10 right-0 w-[24rem] h-[24rem] bg-cyan-400 rounded-full filter blur-[120px] opacity-40 animate-[spin_10s_linear_infinite_reverse]" style={{ animationDelay: "2s" }}></div>
-              <div className="absolute bottom-0 left-10 w-[28rem] h-[28rem] bg-indigo-500 rounded-full filter blur-[120px] opacity-30 animate-[spin_12s_linear_infinite]" style={{ animationDelay: "4s" }}></div>
-              <div className="absolute -bottom-10 right-10 w-[22rem] h-[22rem] bg-sky-400 rounded-full filter blur-[120px] opacity-40 animate-[pulse_6s_ease-in-out_infinite]" style={{ animationDelay: "1s" }}></div>
-            </div>
-
-            <div className="group relative w-full max-w-2xl">
-              <img
-                src={HERO_IMAGE_URL}
-                alt="Patient care illustration"
-                className="relative z-10 mx-auto h-auto w-full max-w-[520px] translate-y-2 transition-all duration-700 ease-out group-hover:scale-[1.03] group-hover:-translate-y-1 drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)]"
-              />
-            </div>
-          </div>
+    <div className="space-y-8 pb-10">
+      {/* Welcome Header */}
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Welcome back, {PATIENT_NAME}</h1>
+          <p className="text-muted-foreground">Here's what's happening with your health journey today.</p>
         </div>
-      </section>
+        <Button className="w-fit rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">
+          <Plus className="mr-2 h-4 w-4" /> Book Appointment
+        </Button>
+      </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card
-          className="rounded-2xl border-border/60 animate-in fade-in slide-in-from-bottom-3 duration-700"
-          style={{ animationDelay: "120ms" }}
-        >
-          <CardContent className="space-y-2 p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Next Visit</p>
-            <p className="text-xl font-semibold">Tomorrow</p>
-            <p className="text-sm text-muted-foreground">10:30 AM with Dr. Sarah Jenkins</p>
-          </CardContent>
-        </Card>
+      {/* Stats Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { 
+            label: "Health Score", 
+            value: "92/100", 
+            sub: "+2 points this week", 
+            icon: Heart, 
+            color: "text-rose-500", 
+            bg: "bg-rose-50" 
+          },
+          { 
+            label: "Next Appointment", 
+            value: "Tomorrow", 
+            sub: "10:30 AM • Dr. Jenkins", 
+            icon: Calendar, 
+            color: "text-emerald-500", 
+            bg: "bg-emerald-50" 
+          },
+          { 
+            label: "Active Medications", 
+            value: "2 Prescribed", 
+            sub: "Next dose in 2 hours", 
+            icon: Pill, 
+            color: "text-blue-500", 
+            bg: "bg-blue-50" 
+          },
+          { 
+            label: "New Messages", 
+            value: "3 Unread", 
+            sub: "From your care team", 
+            icon: MessageSquare, 
+            color: "text-amber-500", 
+            bg: "bg-amber-50" 
+          },
+        ].map((stat, i) => (
+          <Card key={i} className="overflow-hidden border-none shadow-md shadow-slate-200/50 transition-all hover:shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className={`rounded-xl p-2.5 ${stat.bg} ${stat.color}`}>
+                  <stat.icon className="h-5 w-5" />
+                </div>
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div className="mt-4 space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.sub}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        <Card
-          className="rounded-2xl border-border/60 animate-in fade-in slide-in-from-bottom-3 duration-700"
-          style={{ animationDelay: "200ms" }}
-        >
-          <CardContent className="space-y-2 p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Latest Report</p>
-            <p className="text-xl font-semibold">Blood Test</p>
-            <p className="text-sm text-muted-foreground">Normal range, updated on Oct 12, 2026</p>
-          </CardContent>
-        </Card>
-
-        <Card
-          className="rounded-2xl border-border/60 animate-in fade-in slide-in-from-bottom-3 duration-700"
-          style={{ animationDelay: "280ms" }}
-        >
-          <CardContent className="space-y-2 p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Medications</p>
-            <p className="text-xl font-semibold">2 Active</p>
-            <p className="text-sm text-muted-foreground">Lisinopril, Atorvastatin</p>
-          </CardContent>
-        </Card>
-
-        <Card
-          className="rounded-2xl border-border/60 animate-in fade-in slide-in-from-bottom-3 duration-700"
-          style={{ animationDelay: "360ms" }}
-        >
-          <CardContent className="space-y-2 p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Unread Messages</p>
-            <p className="text-xl font-semibold">3</p>
-            <p className="text-sm text-muted-foreground">From care team and support</p>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section id="care-team" className="scroll-mt-36 grid gap-6 md:grid-cols-2">
-        <Card
-          className="overflow-hidden rounded-3xl border-border/60 animate-in fade-in slide-in-from-bottom-3 duration-700"
-          style={{ animationDelay: "420ms" }}
-        >
-          <CardContent className="space-y-3 p-6">
-            <h3 className="text-2xl font-semibold tracking-tight">Your Care Team</h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Keep in touch with your assigned specialists, review follow-ups, and request support when needed.
-            </p>
-            <Button variant="outline" className="rounded-full">
-              Message Care Team
+      <div className="grid gap-8 lg:grid-cols-3">
+        {/* Upcoming Appointments */}
+        <Card className="lg:col-span-2 border-none shadow-md shadow-slate-200/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle className="text-xl font-bold">Upcoming Appointments</CardTitle>
+              <CardDescription>Your scheduled visits for the next 30 days.</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+              View All <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="space-y-4">
+              {[
+                { name: "Dr. Sarah Jenkins", specialty: "Cardiologist", time: "Oct 27, 10:30 AM", status: "Confirmed" },
+                { name: "Dr. Michael Chen", specialty: "General Practitioner", time: "Nov 02, 02:15 PM", status: "Pending" },
+              ].map((appt, i) => (
+                <div key={i} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4 transition-colors hover:bg-slate-50">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-600 font-semibold">
+                      {appt.name.split(' ')[1][0]}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">{appt.name}</p>
+                      <p className="text-sm text-muted-foreground">{appt.specialty}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-slate-900">
+                      <Clock className="h-3.5 w-3.5 text-slate-400" /> {appt.time}
+                    </div>
+                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      appt.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {appt.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        <Card
-          id="wellness"
-          className="scroll-mt-36 overflow-hidden rounded-3xl border-border/60 animate-in fade-in slide-in-from-bottom-3 duration-700"
-          style={{ animationDelay: "500ms" }}
-        >
-          <div className="h-52">
-            <img
-              src={WELLNESS_IMAGE_URL}
-              alt="Wellness"
-              className="h-full w-full object-cover"
-            />
+        {/* Health Trends */}
+        <Card className="border-none shadow-md shadow-slate-200/50">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold">Health Trends</CardTitle>
+            <CardDescription>Activity overview.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {[
+                { label: "Steps", value: "8,432", goal: "10k", progress: 84, color: "bg-emerald-500" },
+                { label: "Sleep", value: "7.2h", goal: "8h", progress: 90, color: "bg-blue-500" },
+                { label: "Water", value: "1.5L", goal: "2.5L", progress: 60, color: "bg-sky-500" },
+              ].map((item, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-slate-700">{item.label}</span>
+                    <span className="text-muted-foreground">{item.value} / {item.goal}</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className={`h-full ${item.color} rounded-full`} style={{ width: `${item.progress}%` }}></div>
+                  </div>
+                </div>
+              ))}
+              
+              <div className="rounded-2xl bg-emerald-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-white p-2">
+                    <Activity className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-emerald-900">Daily Tip</p>
+                    <p className="text-xs text-emerald-700">Drink 500ml more water today to reach your goal.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions & Team */}
+      <div className="grid gap-8 lg:grid-cols-2">
+        <Card className="border-none shadow-md shadow-slate-200/50 bg-slate-900 text-white overflow-hidden relative">
+          <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/5 blur-3xl"></div>
+          <CardHeader>
+            <CardTitle className="text-xl font-bold">Need Help?</CardTitle>
+            <CardDescription className="text-slate-400">Connect with your care team instantly.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm leading-relaxed text-slate-300">
+              Our medical specialists are available for consultations. Start a chat or schedule a video call for immediate assistance.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <Button className="bg-emerald-600 hover:bg-emerald-700 rounded-xl">
+                Start Chat
+              </Button>
+              <Button variant="outline" className="border-white/20 text-black hover:bg-white hover:text-emerald-600  rounded-xl transition-all duration-300">
+                Call Support
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-md shadow-slate-200/50 overflow-hidden">
+          <div className="bg-emerald-600 px-6 py-4 flex items-center justify-between text-white">
+            <h3 className="font-bold">Latest Report</h3>
+            <ArrowUpRight className="h-5 w-5 opacity-80" />
           </div>
-          <CardContent className="space-y-3 p-6">
-            <h3 className="text-2xl font-semibold tracking-tight">Wellness & Habits</h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Track daily goals and small habits that improve your long-term health outcomes.
-            </p>
-            <Button variant="outline" className="rounded-full">
-              Open Wellness
-            </Button>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                <Activity className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Annual Physical Results</p>
+                <p className="text-sm text-muted-foreground">Uploaded Oct 15, 2026</p>
+              </div>
+              <Button variant="outline" className="ml-auto rounded-xl border-emerald-100 text-emerald-600 hover:bg-emerald-50">
+                Download
+              </Button>
+            </div>
           </CardContent>
         </Card>
-      </section>
+      </div>
     </div>
   )
 }
