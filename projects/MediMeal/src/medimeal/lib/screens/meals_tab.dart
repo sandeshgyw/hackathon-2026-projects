@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:medimeal/models/hydration_workflow.dart';
+import 'package:medimeal/models/weekly_tracking_workflow.dart';
+
 import 'package:medimeal/models/ingredient_evaluation_result.dart';
 import 'package:medimeal/services/hydration_workflow_service.dart';
 import 'package:medimeal/services/ingredient_evaluator_service.dart';
@@ -19,13 +21,16 @@ class MealsTab extends StatefulWidget {
   final Medication? latestMedication;
   final TimingWorkflow? activeTimingWorkflow;
   final HydrationWorkflow? activeHydrationWorkflow;
+  final WeeklyTrackingWorkflow? activeWeeklyTrackingWorkflow;
 
-  const MealsTab(
-      {super.key,
-      required this.careState,
-      required this.latestMedication,
-      required this.activeTimingWorkflow,
-      required this.activeHydrationWorkflow});
+  const MealsTab({
+    super.key,
+    required this.careState,
+    required this.latestMedication,
+    required this.activeTimingWorkflow,
+    required this.activeHydrationWorkflow,
+    required this.activeWeeklyTrackingWorkflow,
+  });
 
   @override
   State<MealsTab> createState() => _MealsTabState();
@@ -98,6 +103,10 @@ class _MealsTabState extends State<MealsTab> {
           ? 'Hydration routine is active. Prefer simple, supportive, easy-to-follow meals for today.'
           : '';
 
+      final String weeklyNote = widget.activeWeeklyTrackingWorkflow != null
+          ? 'Weekly tracking is active. The recipe should respect the remaining allowance for this week and avoid pushing the user over the limit.'
+          : '';
+
       final IngredientEvaluationResult evaluation =
           IngredientEvaluatorService.evaluate(
         ingredientsText: ingredientsController.text,
@@ -112,6 +121,7 @@ class _MealsTabState extends State<MealsTab> {
         careState: widget.careState,
         latestMedication: widget.latestMedication,
         supportNote: supportNote,
+        weeklyNote: weeklyNote,
       );
 
       setState(() {
@@ -382,8 +392,8 @@ class _MealsTabState extends State<MealsTab> {
             Text(
               generatedMealPlan!.title,
               style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 10),
@@ -444,130 +454,228 @@ class _MealsTabState extends State<MealsTab> {
             ],
             if (generatedMealPlan!.timingMessage.isNotEmpty) ...[
               const SizedBox(height: 14),
-              Text(
-                generatedMealPlan!.timingMessage,
-                style: const TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  fontStyle: FontStyle.italic,
-                  height: 1.4,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-              ),
-            ],
-            if (generatedMealPlan!.blockedIngredients.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Skipped Ingredients',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...generatedMealPlan!.blockedIngredients.map(
-                (ingredient) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text('• $ingredient'),
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            const Text(
-              'Ingredients Used',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...generatedMealPlan!.ingredientsUsed.map(
-              (ingredient) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text('• $ingredient'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Steps',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...generatedMealPlan!.steps.map(
-              (step) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text('• $step'),
-              ),
-            ),
-            if (generatedMealPlan!.whyIngredientsFit.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Why these ingredients fit',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...generatedMealPlan!.whyIngredientsFit.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    '• $item',
-                    style: const TextStyle(
-                      color: Color(0xFFCBD5E1),
-                      height: 1.4,
-                    ),
+                child: Text(
+                  generatedMealPlan!.timingMessage,
+                  style: const TextStyle(
+                    color: Color(0xFFCBD5E1),
+                    height: 1.4,
                   ),
                 ),
               ),
             ],
-            if (generatedMealPlan!.whyIngredientsWereBlocked.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Why some ingredients were skipped',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...generatedMealPlan!.whyIngredientsWereBlocked.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    '• $item',
-                    style: const TextStyle(
-                      color: Color(0xFFCBD5E1),
-                      height: 1.4,
-                    ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _showRecipeBottomSheet,
+                    child: const Text('View Recipe'),
                   ),
                 ),
-              ),
-            ],
-            if (generatedMealPlan!.timingMessage.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Timing note',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _showIngredientNotesBottomSheet,
+                    child: const Text('Ingredient Notes'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                generatedMealPlan!.timingMessage,
-                style: const TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showRecipeBottomSheet() {
+    if (generatedMealPlan == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E293B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  generatedMealPlan!.title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  generatedMealPlan!.summary,
+                  style: const TextStyle(
+                    color: Color(0xFFCBD5E1),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Ingredients Used',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...generatedMealPlan!.ingredientsUsed.map(
+                  (ingredient) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      '• $ingredient',
+                      style: const TextStyle(color: Color(0xFFCBD5E1)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Steps',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...generatedMealPlan!.steps.map(
+                  (step) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      '• $step',
+                      style: const TextStyle(
+                        color: Color(0xFFCBD5E1),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showIngredientNotesBottomSheet() {
+    if (generatedMealPlan == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E293B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Ingredient Notes',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                if (generatedMealPlan!.whyIngredientsFit.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Why these ingredients fit',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...generatedMealPlan!.whyIngredientsFit.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        '• $item',
+                        style: const TextStyle(
+                          color: Color(0xFFCBD5E1),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                if (generatedMealPlan!
+                    .whyIngredientsWereBlocked.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Why some ingredients were not used',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...generatedMealPlan!.whyIngredientsWereBlocked.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        '• $item',
+                        style: const TextStyle(
+                          color: Color(0xFFCBD5E1),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                if (generatedMealPlan!.blockedIngredients.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Ingredients not used',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...generatedMealPlan!.blockedIngredients.map(
+                    (ingredient) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '• $ingredient',
+                        style: const TextStyle(color: Color(0xFFCBD5E1)),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -587,7 +695,9 @@ class _MealsTabState extends State<MealsTab> {
             ? 'Your next recipe is for later'
             : (widget.activeHydrationWorkflow != null)
                 ? 'Your next recipe should feel simple and supportive today'
-                : 'You can plan your meal now';
+                : (widget.activeWeeklyTrackingWorkflow != null)
+                    ? 'Your next recipe should fit within this week’s remaining allowance'
+                    : 'You can plan your meal now';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:medimeal/models/weekly_tracking_workflow.dart';
+import 'package:medimeal/services/weekly_tracking_workflow_service.dart';
 
 import '../models/care_state.dart';
 import '../models/hydration_workflow.dart';
@@ -20,6 +22,8 @@ class HomeTab extends StatefulWidget {
   final HydrationWorkflow? activeHydrationWorkflow;
   final VoidCallback onStartHydrationRoutine;
   final VoidCallback onLogHydrationGlass;
+  final WeeklyTrackingWorkflow? activeWeeklyTrackingWorkflow;
+  final VoidCallback onStartWeeklyTracking;
 
   const HomeTab({
     super.key,
@@ -32,6 +36,8 @@ class HomeTab extends StatefulWidget {
     required this.activeHydrationWorkflow,
     required this.onStartHydrationRoutine,
     required this.onLogHydrationGlass,
+    required this.activeWeeklyTrackingWorkflow,
+    required this.onStartWeeklyTracking,
   });
 
   @override
@@ -275,6 +281,67 @@ class _HomeTabState extends State<HomeTab> {
       );
     }
 
+    if (widget.activeWeeklyTrackingWorkflow != null) {
+      final weekly = widget.activeWeeklyTrackingWorkflow!;
+
+      return Card(
+        color: const Color(0xFF2E1065),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.insights_outlined,
+                    color: Color(0xFFC084FC),
+                    size: 26,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Weekly tracking active',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFC084FC),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                WeeklyTrackingWorkflowService.buildProgressLabel(weekly),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                WeeklyTrackingWorkflowService.buildRemainingLabel(weekly),
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFFE9D5FF),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Your next recipe should fit within the remaining flexibility for this week.',
+                style: TextStyle(
+                  color: Color(0xFFE9D5FF),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -455,6 +522,43 @@ class _HomeTabState extends State<HomeTab> {
                   color: Color(0xFFCBD5E1),
                   height: 1.4,
                 ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final bool isWeeklyTrackingMedication =
+        widget.latestMedication?.workflowType == 'weekly_tracking';
+
+    if (isWeeklyTrackingMedication &&
+        widget.activeWeeklyTrackingWorkflow == null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'What you can do now',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Weekly food-awareness tracking can help guide your next meal.',
+                style: TextStyle(
+                  color: Color(0xFFCBD5E1),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ElevatedButton(
+                onPressed: widget.onStartWeeklyTracking,
+                child: const Text('Start Weekly Tracking'),
               ),
             ],
           ),
