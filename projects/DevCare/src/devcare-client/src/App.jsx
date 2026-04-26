@@ -150,14 +150,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/feedback"
-          element={
-            <ProtectedRoute allowedRoles={['patient']}>
-              <Feedback />
-            </ProtectedRoute>
-          }
-        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
