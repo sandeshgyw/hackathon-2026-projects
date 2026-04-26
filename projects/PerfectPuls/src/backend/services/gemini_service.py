@@ -22,13 +22,14 @@ class GeminiService:
     def __init__(self):
         if settings.google_ai_api_key:
             genai.configure(api_key=settings.google_ai_api_key)
-            # Use Gemini 3.1 Pro for the complex spatial reasoning of PDF tables
+            # Use Gemini 2.5 Pro for the complex spatial reasoning of PDF tables
             # generation_config forces the model to output ONLY valid JSON
             self.model = genai.GenerativeModel(
-                model_name='gemini-3.1-pro',
+                model_name='gemini-2.5-pro',
                 generation_config={"response_mime_type": "application/json"}
             )
-            logger.info("Gemini 3.1 Pro initialized with Native JSON Mode")
+            self.embedding_model = "models/gemini-embedding-2"
+            logger.info("Gemini 2.5 Pro initialized with Native JSON Mode")
         else:
             self.model = None
             logger.warning("GOOGLE_AI_API_KEY missing. Ensure .env is configured.")
@@ -114,6 +115,23 @@ class GeminiService:
         - If a service is part of Cigna Healthy Rewards, use the DISCOUNTED_BY relationship.
         - Normalize names: use 'Physiotherapy' instead of 'Physical Therapy'.
         """
+
+    async def generate_embedding(self, text: str) -> list[float]:
+        """
+        Generates a vector using Google's cloud API.
+        No local CPU power or DLLs required!
+        """
+        try:
+            result = await asyncio.to_thread(
+                genai.embed_content,
+                model=self.embedding_model,
+                content=text,
+                task_type="retrieval_document"
+            )
+            return result['embedding']
+        except Exception as e:
+            logger.error(f"Embedding failed: {e}")
+            return []
 
     async def _save_locally(self, data: Dict[str, Any]):
         """Saves JSON results to sample-pd folder."""
