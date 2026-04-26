@@ -1,10 +1,3 @@
-Project Name
-Team Members (names and GitHub handles)
-Problem Statement – What problem are you solving?
-Solution – Describe your solution and how it works.
-Tech Stack – Technologies, frameworks, and tools used.
-Setup Instructions – How to run your project locally.
-Demo – Link to a demo video, live deployment, or screenshots.
 
 # MediTriage — AI Patient Triage Assistant
 ### CareDevi AI Innovation Hackathon 2026 | Track: AI Patient Triage
@@ -15,11 +8,10 @@ Demo – Link to a demo video, live deployment, or screenshots.
 
 | Name | GitHub |
 |---|---|
-| Megha | [@megha-github](https://github.com) |
-| Jahnavi | [@jahnavi-github](https://github.com) |
-| Harshini | [@harshini-github](https://github.com) |
+| Megha | [https://github.com/meghakr1] |
+| Jahnavi | [https://github.com/JaanviR] |
+| Harshini | [https://github.com/HarshiniReddy1324] |
 
-> Replace the GitHub handles above with your actual usernames before submitting.
 
 ---
 
@@ -30,6 +22,8 @@ Every day, patients with serious conditions sit in waiting rooms behind patients
 A patient with bacterial meningitis — stiff neck, high fever, sensitivity to light — waits alongside a patient with a runny nose. Every minute of delay in a meningitis case is life-threatening. Every unnecessary ER visit for a common cold wastes resources and delays care for someone who truly needs it.
 
 Existing triage systems are manual, slow, and inconsistent. Patients who call a clinic describe their symptoms to a receptionist with no clinical training. Patients who search online get generic results with no personalization. There is no tool that combines clinical NLP, grounded AI reasoning, and intelligent routing in a single accessible interface.
+
+This problem is worst for the 60 million Americans in healthcare desert areas — people who can't easily call a doctor and have no trusted source to tell them how serious their symptoms are.
 
 ---
 
@@ -279,6 +273,22 @@ All medical knowledge used for RAG retrieval comes from:
 - Google Calendar booking defaults to 2 hours from current time — production would use proper scheduling
 - Voice input requires clear audio — background noise reduces Whisper accuracy
 - This is a triage tool, not a diagnostic tool — always consult a licensed physician
+
+---
+
+## Evaluation Results
+
+We evaluated MediTriage on 50 curated test cases covering HIGH emergencies, MEDIUM outpatient cases, LOW home care, bias testing, and RAG fallback scenarios.
+
+| Metric | Result |
+|---|---|
+| Overall Accuracy | 79.1% (43 regular cases) |
+| HIGH Risk Recall | 100% — 14/14 emergencies caught |
+| RAG Fallback Handling | 71.4% — graceful degradation on uncovered conditions |
+| Age Bias | None detected — paired tests 38 vs 39 |
+| Gender Bias | None detected — atypical female cardiac caught correctly |
+
+Full report: [`demo/evaluation_results.md`](./demo/evaluation_results.md)
 
 ---
 
