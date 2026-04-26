@@ -5,30 +5,33 @@
    ═══════════════════════════════════════════════════════════ */
 
 .deep-dive-root {
-  --navy-950: #060c18;
-  --navy-900: #0b1424;
-  --navy-800: #0f1e36;
-  --navy-700: #152845;
-  --navy-600: #1e3a5f;
-  --navy-500: #2a5080;
-  --dd-border: rgba(255,255,255,0.07);
-  --dd-border-bright: rgba(255,255,255,0.14);
-  --dd-text-primary: #e8edf5;
-  --dd-text-secondary: #8a9ab5;
-  --dd-text-tertiary: #4e617d;
-  --dd-blue: #3d8ef0;
-  --dd-blue-dim: rgba(61,142,240,0.15);
-  --dd-green: #22c48a;
-  --dd-green-dim: rgba(34,196,138,0.12);
+  /* Re-mapped to light theme */
+  --navy-950: #F8FAFC; /* Background */
+  --navy-900: #FFFFFF; /* Panels */
+  --navy-800: #F1F5F9; /* Inner cards */
+  --navy-700: #E2E8F0;
+  --navy-600: #CBD5E1;
+  --navy-500: #94A3B8;
+
+  --dd-border: rgba(15, 23, 42, 0.1);
+  --dd-border-bright: rgba(15, 23, 42, 0.18);
+  --dd-text-primary: #0F172A;
+  --dd-text-secondary: #334155;
+  --dd-text-tertiary: #64748B;
+
+  --dd-blue: #2563EB;
+  --dd-blue-dim: rgba(37, 99, 235, 0.15);
+  --dd-green: #22C55E;
+  --dd-green-dim: rgba(34, 197, 94, 0.15);
   --dd-orange: #f0922a;
-  --dd-orange-dim: rgba(240,146,42,0.12);
+  --dd-orange-dim: rgba(240, 146, 42, 0.15);
   --dd-red: #e05656;
-  --dd-red-dim: rgba(224,86,86,0.12);
+  --dd-red-dim: rgba(224, 86, 86, 0.12);
   --dd-purple: #9b7de8;
-  --dd-purple-dim: rgba(155,125,232,0.12);
+  --dd-purple-dim: rgba(155, 125, 232, 0.12);
   --dd-pink: #e26c9a;
-  --dd-pink-dim: rgba(226,108,154,0.12);
-  --dd-gray: #6b7a90;
+  --dd-pink-dim: rgba(226, 108, 154, 0.12);
+  --dd-gray: #94A3B8;
 
   --dd-font-display: 'Syne', sans-serif;
   --dd-font-body: 'DM Sans', sans-serif;

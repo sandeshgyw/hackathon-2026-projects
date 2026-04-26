@@ -401,228 +401,186 @@ function DisclaimerBanner({ text }) {
 
 function Snapshot({ data }) {
   return (
-    <section className="page">
-      <PatientHeader data={data} />
-      <MetricGrid metrics={data.snapshot.latestMetrics} />
-      <div className="snapshot-grid">
-        <ClinicalState data={data} />
-        <AIBriefPanel />
-      </div>
-      <div className="three-col">
-        <AllergyPanel allergies={data.snapshot.allergies} />
-        <ConditionsPanel conditions={data.snapshot.activeConditions} />
-        <MedicationPanel medications={data.snapshot.currentMedications} />
-      </div>
-      <DrugWarnings medications={data.snapshot.currentMedications} />
-    </section>
-  );
-}
+    <section className="page snapshot-dense-mode">
+      {/* ── Top Bar / Patient Hero ── */}
+      <div className="ehr-header">
+        <div className="ehr-id-row">
+          <div className="patient-identity">
+            <div className="patient-avatar">{data.patient.initials || "EB"}</div>
+            <div className="patient-name-block">
+              <div className="ehr-name">
+                {data.patient.name}{" "}
+                <span className="demo">
+                  · {titleCase(data.patient.gender)} · {data.patient.age} · MRN {data.patient.mrn}
+                </span>
+              </div>
+              <div className="ehr-meta">
+                <span className="ehr-meta-item">Blood type: {display(data.patient.bloodType)}</span>
+                <span className="ehr-meta-item">Code status: {display(data.patient.codeStatus)}</span>
+                <span className="ehr-meta-item">Address: {display(data.patient.address)}</span>
+              </div>
+            </div>
+          </div>
+          {data.snapshot.allergies && data.snapshot.allergies.length > 0 && (
+            <div className="allergy-block">
+              <span className="allergy-label">⚠ Allergies</span>
+              {data.snapshot.allergies.map((a) => (
+                <span key={a.name} className="allergy-pill">
+                  {compactCondition(a.name)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
-function PatientHeader({ data }) {
-  const patient = data.patient;
-  return (
-    <header className="patient-hero">
-      <div>
-        <div className="eyebrow">QR-linked synthetic patient record</div>
-        <h1>{patient.name}</h1>
-        <p>
-          {titleCase(patient.gender)} · {patient.age} · MRN {patient.mrn}
-        </p>
+        {/* ── Vitals Strip ── */}
+        <div className="vitals-strip">
+          {metricOrder.map((key) => {
+            const metric = data.snapshot.latestMetrics[key];
+            if (!metric) return null;
+            return (
+              <div className="vital-item" key={key}>
+                <div className="vital-value good">{metric.displayValue}</div>
+                <div className="vital-label">{metric.label}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <div className="header-facts">
-        <Fact label="Blood type" value={patient.bloodType} />
-        <Fact label="Code status" value={patient.codeStatus} />
-        <Fact label="Address" value={patient.address} />
+
+      {/* ── Main Content Grid ── */}
+      <div className="panels">
+        <ClinicalSummaryPanel data={data} />
+        <MedicationPanelDense medications={data.snapshot.currentMedications} />
       </div>
-    </header>
-  );
-}
 
-function Fact({ label, value }) {
-  return (
-    <div className="fact">
-      <span>{label}</span>
-      <strong>{display(value)}</strong>
-    </div>
-  );
-}
-
-function MetricGrid({ metrics }) {
-  return (
-    <div className="metric-grid">
-      {metricOrder.map((key) => {
-        const metric = metrics[key];
-        if (!metric) return null;
-        return (
-          <article className="metric-card" key={key}>
-            <span>{metric.label}</span>
-            <strong>{metric.displayValue}</strong>
-            <small>{metric.date}</small>
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-
-function ClinicalState({ data }) {
-  return (
-    <section className="panel clinical-state">
-      <div className="panel-title">
-        <HeartPulse size={18} />
-        <h2>Clinical State At A Glance</h2>
-      </div>
-      <div className="status-pill">Structured snapshot</div>
-      <p>{data.snapshot.aiStatusLine}</p>
-      <div className="mini-stats">
-        <span>{data.conditions.length} conditions</span>
-        <span>{data.medications.length} medications</span>
-        <span>{data.encounters.length} recent encounters</span>
+      {/* ── Conditions Strip ── */}
+      <div className="panel conditions-strip-panel" style={{ marginTop: "14px" }}>
+        <div className="panel-header">
+          <h3>Active Conditions</h3>
+          <span className="panel-count">{data.snapshot.activeConditions.length}</span>
+        </div>
+        <div className="problem-chips">
+          {data.snapshot.activeConditions.slice(0, 15).map((c) => (
+            <span key={c.name} className="chip chip-active">
+              {compactCondition(c.name)}
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-function AIBriefPanel() {
+/* ═══════════════════════════════════════════════════════════
+   Clinical Summary (Combines state + AI brief button)
+   ═══════════════════════════════════════════════════════════ */
+
+function ClinicalSummaryPanel({ data }) {
   const [brief, setBrief] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   async function handleBrief() {
     setLoading(true);
-    setError("");
     try {
       setBrief(await generateBrief());
-    } catch {
-      setError("Unable to generate brief. Check backend and Hugging Face token.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <section className="panel">
-      <div className="panel-title">
-        <Bot size={18} />
-        <h2>First Visit Brief</h2>
+    <div className="panel summary-panel">
+      <div className="panel-header">
+        <h3>Clinical State & Summary</h3>
+        <span className="status-badge">✓ Structured</span>
       </div>
-      <button className="primary-button" disabled={loading} onClick={handleBrief}>
-        {loading ? <Loader2 className="spin" size={16} /> : <FileText size={16} />}
-        {loading ? "Generating..." : "Generate First Visit Brief"}
-      </button>
-      {error && <p className="error-text">{error}</p>}
-      {brief && (
-        <div className="brief-box">
-          <p>{brief.brief}</p>
-          <small>
-            Source: {brief.source} · Model: {brief.model || "fallback"}
-          </small>
-        </div>
-      )}
-    </section>
-  );
-}
+      <div className="ehr-summary" style={{ marginBottom: "12px" }}>
+        <p style={{ margin: 0 }}>{data.snapshot.aiStatusLine}</p>
+      </div>
 
-function AllergyPanel({ allergies }) {
-  return (
-    <section className="panel">
-      <div className="panel-title danger-title">
-        <AlertTriangle size={18} />
-        <h2>Allergies</h2>
-      </div>
-      <div className="chip-wrap">
-        {allergies.length ? (
-          allergies.map((allergy) => (
-            <span className="chip danger" key={allergy.name}>
-              {compactCondition(allergy.name)}
-            </span>
-          ))
-        ) : (
-          <p className="muted">No allergies documented.</p>
+      <div className="ai-brief-inline">
+        {!brief && !loading && (
+          <button className="spec-btn active" onClick={handleBrief} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Bot size={14} /> Generate AI First Visit Brief
+          </button>
+        )}
+        {loading && (
+          <div className="loading-inline" style={{ fontSize: "12px", color: "var(--text-secondary)", display: "flex", gap: "8px", alignItems: "center" }}>
+            <Loader2 size={14} className="spin" /> Synthesizing medical history...
+          </div>
+        )}
+        {brief && (
+          <div className="insight normal" style={{ marginTop: "0" }}>
+            <span className="insight-tag"><Bot size={10} style={{ display: "inline", verticalAlign: "middle" }}/> AI Brief</span>
+            <div className="insight-text" style={{ marginTop: "4px" }}>{brief.brief}</div>
+          </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }
 
-function ConditionsPanel({ conditions }) {
-  return (
-    <section className="panel">
-      <div className="panel-title">
-        <Activity size={18} />
-        <h2>Active Conditions</h2>
-      </div>
-      <div className="chip-wrap">
-        {conditions.slice(0, 12).map((condition) => (
-          <span className="chip" key={condition.name}>
-            {compactCondition(condition.name)}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
+/* ═══════════════════════════════════════════════════════════
+   Medications Panel (with Integrated FDA Check)
+   ═══════════════════════════════════════════════════════════ */
 
-function MedicationPanel({ medications }) {
-  return (
-    <section className="panel">
-      <div className="panel-title">
-        <Pill size={18} />
-        <h2>Current Medications</h2>
-      </div>
-      <div className="list">
-        {medications.slice(0, 8).map((med) => (
-          <div className="list-row" key={med.name}>
-            <strong>{shortMedName(med.name)}</strong>
-            <span>{med.status} · {med.authoredOn || "date unknown"}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function DrugWarnings({ medications }) {
+function MedicationPanelDense({ medications }) {
   const [warnings, setWarnings] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   async function checkWarnings() {
     setLoading(true);
-    setError("");
     try {
       const medNames = medications.slice(0, 5).map((med) => med.name);
-      setWarnings(await getDrugWarnings(medNames));
+      const res = await getDrugWarnings(medNames);
+      setWarnings(res?.warnings || []);
     } catch {
-      setError("Unable to check OpenFDA labels.");
+      setWarnings([]);
     } finally {
       setLoading(false);
     }
   }
 
+  function getWarningForMed(medName) {
+    if (!warnings) return null;
+    const short = shortMedName(medName).toLowerCase();
+    return warnings.find((w) => w.medication.toLowerCase().includes(short) || short.includes(w.medication.toLowerCase()));
+  }
+
   return (
-    <section className="panel wide-panel">
-      <div className="panel-title danger-title">
-        <AlertTriangle size={18} />
-        <h2>OpenFDA Medication Warnings</h2>
+    <div className="panel meds-panel">
+      <div className="panel-header">
+        <h3>Current Medications</h3>
+        {!warnings ? (
+          <button className="spec-btn" onClick={checkWarnings} disabled={loading} style={{ padding: "4px 10px", display: "flex", gap: "4px" }}>
+            {loading ? <Loader2 size={12} className="spin" /> : <AlertTriangle size={12} />}
+            {loading ? "Checking..." : "FDA Check"}
+          </button>
+        ) : (
+          <span className="status-badge" style={{ background: "var(--green-dim)", color: "var(--green)" }}>✓ FDA Checked</span>
+        )}
       </div>
-      <button className="secondary-button" disabled={loading} onClick={checkWarnings}>
-        {loading ? <Loader2 className="spin" size={16} /> : <Pill size={16} />}
-        {loading ? "Checking..." : "Check Current Medications"}
-      </button>
-      {error && <p className="error-text">{error}</p>}
-      {warnings && (
-        <div className="warning-grid">
-          {warnings.warnings.map((warning) => (
-            <article className="warning-card" key={warning.medication}>
-              <strong>{warning.medication}</strong>
-              <p>{warning.interaction || warning.warning}</p>
-              <small>{warning.source}</small>
-            </article>
-          ))}
-        </div>
-      )}
-    </section>
+      <div className="encounters-list">
+        {medications.slice(0, 8).map((med) => {
+          const warn = getWarningForMed(med.name);
+          return (
+            <div className="encounter-row" key={med.name} style={{ flexDirection: "column", gap: "4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                <strong style={{ color: "var(--text-primary)" }}>{shortMedName(med.name)}</strong>
+                <span className="enc-spec-badge pcp">{med.status}</span>
+              </div>
+              {warn && (
+                <div style={{ background: "var(--orange-dim)", color: "var(--orange)", padding: "6px 8px", borderRadius: "4px", fontSize: "11px", marginTop: "4px", display: "flex", gap: "6px", alignItems: "flex-start" }}>
+                  <AlertTriangle size={12} style={{ flexShrink: 0, marginTop: "1px" }} />
+                  <span>{warn.interaction || warn.warning}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

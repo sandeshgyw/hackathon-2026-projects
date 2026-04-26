@@ -11,21 +11,21 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --navy-950: #060c18;
-    --navy-900: #0b1424;
-    --navy-800: #0f1e36;
-    --navy-700: #152845;
-    --navy-600: #1e3a5f;
-    --navy-500: #2a5080;
-    --border: rgba(255,255,255,0.07);
-    --border-bright: rgba(255,255,255,0.14);
-    --text-primary: #e8edf5;
-    --text-secondary: #8a9ab5;
-    --text-tertiary: #4e617d;
-    --blue: #3d8ef0;
-    --blue-dim: rgba(61,142,240,0.15);
-    --green: #22c48a;
-    --green-dim: rgba(34,196,138,0.12);
+    --navy-950: #F8FAFC;
+    --navy-900: #FFFFFF;
+    --navy-800: #F1F5F9;
+    --navy-700: #E2E8F0;
+    --navy-600: #CBD5E1;
+    --navy-500: #94A3B8;
+    --border: rgba(15, 23, 42, 0.1);
+    --border-bright: rgba(15, 23, 42, 0.18);
+    --text-primary: #0F172A;
+    --text-secondary: #334155;
+    --text-tertiary: #64748B;
+    --blue: #2563EB;
+    --blue-dim: rgba(37, 99, 235, 0.15);
+    --green: #22C55E;
+    --green-dim: rgba(34, 197, 94, 0.12);
     --orange: #f0922a;
     --orange-dim: rgba(240,146,42,0.12);
     --red: #e05656;
@@ -34,7 +34,7 @@
     --purple-dim: rgba(155,125,232,0.12);
     --pink: #e26c9a;
     --pink-dim: rgba(226,108,154,0.12);
-    --gray: #6b7a90;
+    --gray: #94A3B8;
 
     --font-display: 'Syne', sans-serif;
     --font-body: 'DM Sans', sans-serif;
@@ -205,7 +205,7 @@
     border: 1px solid transparent;
   }
   .chip-active { background: var(--blue-dim); color: var(--blue); border-color: rgba(61,142,240,0.25); }
-  .chip-stable { background: rgba(255,255,255,0.04); color: var(--text-secondary); border-color: var(--border); }
+  .chip-stable { background: rgba(15, 23, 42, 0.04); color: var(--text-secondary); border-color: var(--border); }
 
   /* ─── SPECIALTY BAR ──────────────────────────────────── */
   .specialty-bar {
@@ -335,7 +335,7 @@
   .lab-toggle.on { color: #fff; border-color: transparent; }
 
   /* Scrub line */
-  .scrub-line { stroke: rgba(255,255,255,0.4); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
+  .scrub-line { stroke: rgba(15, 23, 42, 0.4); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
 
   /* ─── PANELS ─────────────────────────────────────────── */
   .panels {
@@ -455,7 +455,7 @@
   .enc-spec-badge.endo    { background: rgba(34,196,138,0.1);  color: #5dd8a8; border: 1px solid rgba(34,196,138,0.2); }
   .enc-spec-badge.cardio  { background: rgba(226,108,154,0.1); color: #e8879c; border: 1px solid rgba(226,108,154,0.2); }
   .enc-spec-badge.nephro  { background: rgba(216,90,48,0.1);   color: #e08868; border: 1px solid rgba(216,90,48,0.2); }
-  .enc-spec-badge.ortho   { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border); }
+  .enc-spec-badge.ortho   { background: rgba(15, 23, 42, 0.05); color: var(--text-secondary); border: 1px solid var(--border); }
   .enc-text { flex: 1; color: var(--text-secondary); line-height: 1.5; }
 
   /* ─── SECTION FADE-IN ──────────────────────────────────── */
@@ -700,14 +700,14 @@
     // Zebra background bands
     for (let y = 2006; y < 2026; y += 2){
       const x1 = dx(y), x2 = dx(y+2);
-      g.appendChild(el('rect', { x:x1, y:TL.y0, width:x2-x1, height:TL.y1-TL.y0, fill:'rgba(255,255,255,0.012)' }));
+      g.appendChild(el('rect', { x:x1, y:TL.y0, width:x2-x1, height:TL.y1-TL.y0, fill:'rgba(15, 23, 42, 0.012)' }));
     }
 
     // Year ticks
     for (let y = 2006; y <= 2026; y += 2){
       const x = dx(y);
-      g.appendChild(el('line', { x1:x, y1:TL.y0, x2:x, y2:TL.y1, stroke:'rgba(255,255,255,0.06)', 'stroke-width':'1' }));
-      const txt = el('text', { x, y:338, 'text-anchor':'middle', 'font-size':'10', fill:'rgba(255,255,255,0.3)', 'font-family':'IBM Plex Mono, monospace' });
+      g.appendChild(el('line', { x1:x, y1:TL.y0, x2:x, y2:TL.y1, stroke:'rgba(15, 23, 42, 0.06)', 'stroke-width':'1' }));
+      const txt = el('text', { x, y:338, 'text-anchor':'middle', 'font-size':'10', fill:'rgba(15, 23, 42, 0.3)', 'font-family':'IBM Plex Mono, monospace' });
       txt.textContent = y;
       g.appendChild(txt);
     }
@@ -718,9 +718,9 @@
     ];
     lanes.forEach(([label, y], i) => {
       if (i > 0){
-        g.appendChild(el('line', { x1:TL.x0, y1:y-8, x2:TL.x1, y2:y-8, stroke:'rgba(255,255,255,0.05)', 'stroke-width':'0.8', 'stroke-dasharray':'3 4' }));
+        g.appendChild(el('line', { x1:TL.x0, y1:y-8, x2:TL.x1, y2:y-8, stroke:'rgba(15, 23, 42, 0.05)', 'stroke-width':'0.8', 'stroke-dasharray':'3 4' }));
       }
-      const t = el('text', { x:4, y, 'font-size':'9.5', fill:'rgba(255,255,255,0.25)', 'font-family':'Syne, sans-serif', 'font-weight':'600', 'text-transform':'uppercase' });
+      const t = el('text', { x:4, y, 'font-size':'9.5', fill:'rgba(15, 23, 42, 0.25)', 'font-family':'Syne, sans-serif', 'font-weight':'600', 'text-transform':'uppercase' });
       t.textContent = label;
       g.appendChild(t);
     });
@@ -757,11 +757,11 @@
       const w = dx(d.end) - x;
       const y = 65 + i * 10;
       // Track bg
-      g.appendChild(el('rect', { x:TL.x0, y:y, width:TL.x1-TL.x0, height:7, fill:'rgba(255,255,255,0.02)', rx:3 }));
+      g.appendChild(el('rect', { x:TL.x0, y:y, width:TL.x1-TL.x0, height:7, fill:'rgba(15, 23, 42, 0.02)', rx:3 }));
       // Active bar
       g.appendChild(el('rect', { x, y, width:w, height:7, fill:d.color, opacity:0.8, rx:3 }));
       // Label
-      const t = el('text', { x:x+5, y:y+5.5, 'font-size':'7.5', fill:'rgba(255,255,255,0.92)', 'font-family':'DM Sans, sans-serif', 'font-weight':'500' });
+      const t = el('text', { x:x+5, y:y+5.5, 'font-size':'7.5', fill:'rgba(15, 23, 42, 0.92)', 'font-family':'DM Sans, sans-serif', 'font-weight':'500' });
       t.textContent = d.name;
       g.appendChild(t);
     });
@@ -779,7 +779,7 @@
       const y = 158 + i * 8;
       const opacity = m.discontinued ? 0.28 : 0.75;
       g.appendChild(el('rect', { x, y, width:w, height:6, fill:m.color, opacity, rx:2 }));
-      const t = el('text', { x:x+4, y:y+4.5, 'font-size':'7', fill:'rgba(255,255,255,0.88)', 'font-family':'DM Sans, sans-serif', 'font-weight':'500' });
+      const t = el('text', { x:x+4, y:y+4.5, 'font-size':'7', fill:'rgba(15, 23, 42, 0.88)', 'font-family':'DM Sans, sans-serif', 'font-weight':'500' });
       t.textContent = m.name + (m.discontinued ? ' (d/c)' : '');
       g.appendChild(t);
     });
@@ -792,7 +792,7 @@
     const yTop = 240, yBot = 318;
 
     // Lab area background
-    g.appendChild(el('rect', { x:TL.x0, y:yTop-4, width:TL.x1-TL.x0, height:yBot-yTop+8, fill:'rgba(255,255,255,0.015)', rx:3 }));
+    g.appendChild(el('rect', { x:TL.x0, y:yTop-4, width:TL.x1-TL.x0, height:yBot-yTop+8, fill:'rgba(15, 23, 42, 0.015)', rx:3 }));
 
     visibleLabs.forEach(key => {
       const lab = labs[key];
