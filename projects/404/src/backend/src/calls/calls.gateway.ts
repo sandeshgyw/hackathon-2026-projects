@@ -1,3 +1,4 @@
+import { forwardRef, Inject } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -24,6 +25,7 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly userSockets = new Map<string, Set<string>>();
 
   constructor(
+    @Inject(forwardRef(() => CallsService))
     private readonly callsService: CallsService,
     private readonly jwtService: JwtService,
   ) {}

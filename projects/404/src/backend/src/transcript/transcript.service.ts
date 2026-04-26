@@ -183,4 +183,37 @@ export class TranscriptService {
       data: { isMedicationApplied: true },
     });
   }
+
+  // ─── Get all summaries for a patient ────────────────────────────────────
+
+  async getPatientHistory(patientId: string) {
+    return this.prisma.consultationSummary.findMany({
+      where: {
+        callSession: {
+          patientId: patientId,
+        },
+      },
+      include: {
+        callSession: {
+          include: {
+            appointment: {
+              include: {
+                doctor: {
+                  include: {
+                    user: {
+                      select: {
+                        fullName: true,
+                        email: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

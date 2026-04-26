@@ -49,9 +49,19 @@ export class UsersController {
     return this.usersService.create(body);
   }
 
+  @Get('doctors')
+  findDoctors(@Query() query: Record<string, string>) {
+    const filters: ListUsersQuery = {
+      page: parseNumber(query.page),
+      pageSize: parseNumber(query.pageSize),
+      name: query.name,
+      email: query.email,
+      role: 'DOCTOR' as Role,
+    };
+    return this.usersService.findAll(filters);
+  }
+
   @Get()
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN', 'DOCTOR')
   findAll(@Query() query: Record<string, string>) {
     const filters: ListUsersQuery = {
       page: parseNumber(query.page),

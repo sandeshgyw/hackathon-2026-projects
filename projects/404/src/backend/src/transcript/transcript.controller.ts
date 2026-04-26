@@ -47,4 +47,10 @@ export class TranscriptController {
   applyMedications(@Param('callSessionId') callSessionId: string) {
     return this.transcriptService.applyMedications(callSessionId);
   }
+
+  /** Get all history for a patient */
+  @Get('history/:patientId')
+  getHistory(@Param('patientId') patientId: string) {
+    return this.transcriptService.getPatientHistory(patientId);
+  }
 }
