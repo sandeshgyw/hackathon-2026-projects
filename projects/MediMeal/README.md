@@ -145,6 +145,10 @@ The model then receives this structured context and generates:
 
 This design keeps critical decisions out of the model and makes the app more reliable.
 
+## Demo
+
+The demo video and presentation slides are included in the `demo/` folder of this repository.
+
 ## Setup Instructions
 
 ### Prerequisites
