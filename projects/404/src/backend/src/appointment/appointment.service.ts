@@ -111,6 +111,9 @@ export class AppointmentService {
         patientId: true,
         startTime: true,
         endTime: true,
+        patient: {
+          select: { userId: true },
+        },
       },
     });
 
@@ -152,16 +155,26 @@ export class AppointmentService {
 
     // Auto-create a CallSession when appointment is confirmed
     if (data.status === 'CONFIRMED') {
-      await this.prisma.callSession.upsert({
-        where: { appointmentId: id },
-        update: { status: CallStatus.INITIATED },
-        create: {
-          appointmentId: id,
-          doctorId: existingAppointment.doctorId,
-          patientId: existingAppointment.patientId,
-          status: CallStatus.INITIATED,
-        },
-      });
+      await this.prisma.$transaction([
+        this.prisma.callSession.upsert({
+          where: { appointmentId: id },
+          update: { status: CallStatus.INITIATED },
+          create: {
+            appointmentId: id,
+            doctorId: existingAppointment.doctorId,
+            patientId: existingAppointment.patientId,
+            status: CallStatus.INITIATED,
+          },
+        }),
+        this.prisma.notification.create({
+          data: {
+            userId: existingAppointment.patient.userId,
+            title: 'Appointment Confirmed',
+            message: 'Your upcoming appointment has been confirmed by the physician.',
+            type: 'APPOINTMENT_UPDATE',
+          },
+        }),
+      ]);
 
       // Re-fetch so the response includes the new callSession
       return this.prisma.appointment.findUniqueOrThrow({
