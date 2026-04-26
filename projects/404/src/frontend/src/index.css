@@ -1,9 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* ─── Premium Design Tokens ───────────────────────── */
 :root {
-  /* Rich Indigo Primary */
   --color-primary-50:  #eef2ff;
   --color-primary-100: #e0e7ff;
   --color-primary-200: #c7d2fe;
@@ -15,7 +13,6 @@
   --color-primary-800: #3730a3;
   --color-primary-900: #312e81;
 
-  /* Sophisticated Neutrals */
   --color-gray-50:  #f8fafc;
   --color-gray-100: #f1f5f9;
   --color-gray-200: #e2e8f0;
@@ -27,15 +24,27 @@
   --color-gray-800: #1e293b;
   --color-gray-900: #0f172a;
 
-  /* Health Teal */
   --color-green-50:  #f0fdfa;
   --color-green-100: #ccfbf1;
   --color-green-500: #14b8a6;
   --color-green-600: #0d9488;
   --color-green-700: #0f766e;
+
+  --color-border:   #e2e8f0;
+  --color-muted:    #64748b;
+  --color-surface:  rgba(255,255,255,0.9);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+
+  --shadow-sm:  0 1px 3px 0 rgba(0,0,0,.08), 0 1px 2px -1px rgba(0,0,0,.08);
+  --shadow-md:  0 4px 16px -4px rgba(15,23,42,.10), 0 2px 4px -2px rgba(15,23,42,.08);
+  --shadow-lg:  0 12px 32px -8px rgba(15,23,42,.12), 0 4px 8px -4px rgba(15,23,42,.08);
 }
 
-/* ─── Global Reset ──────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -53,49 +62,47 @@ body {
   background-color: var(--color-gray-50);
   color: var(--color-gray-900);
   line-height: 1.6;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Sora', 'Manrope', system-ui, -apple-system, sans-serif;
+  font-family: 'Sora', 'Manrope', system-ui, sans-serif;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.025em;
   color: var(--color-gray-900);
 }
 
-/* ─── Premium Glass Layer ────────────────────────────── */
 .patient-shell {
   background:
-    radial-gradient(120vw circle at 80% -20%, rgba(79, 70, 229, 0.08), transparent 65%),
-    radial-gradient(130vw circle at -10% 80%, rgba(13, 148, 136, 0.06), transparent 70%),
-    linear-gradient(to bottom, #f8fafc, #f1f5f9);
+    radial-gradient(120vw circle at 80% -20%, rgba(79,70,229,.06), transparent 65%),
+    radial-gradient(130vw circle at -10% 80%, rgba(13,148,136,.05), transparent 70%),
+    var(--color-gray-50);
   background-attachment: fixed;
+  min-height: 100dvh;
 }
 
-/* Glassmorphism Surface - Ultra Premium Effect */
+.physician-shell {
+  background:
+    radial-gradient(120vw circle at 80% -20%, rgba(16,185,129,.05), transparent 65%),
+    var(--color-gray-50);
+  background-attachment: fixed;
+  min-height: 100dvh;
+}
+
+.patient-surface,
 .premium-surface {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 12px 32px -12px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 0 rgba(255,255,255,1);
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: 0 1px 2px rgba(15,23,42,.05), inset 0 1px 0 rgba(255,255,255,.9);
 }
 
-/* Migrate old utility to the new premium effect */
-.patient-surface {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 12px 32px -12px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 0 rgba(255,255,255,1);
-}
-
-/* Elegant Scrollbars */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+::-webkit-scrollbar-thumb { background: rgba(148,163,184,.25); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.45); }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
