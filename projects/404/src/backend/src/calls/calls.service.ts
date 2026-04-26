@@ -7,6 +7,9 @@ import {
 import { CallStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 
+import { TranscriptService } from '../transcript/transcript.service';
+import { forwardRef, Inject } from '@nestjs/common';
+
 const callSessionSelect = {
   id: true,
   appointmentId: true,
@@ -25,7 +28,11 @@ type IceServer = {
 
 @Injectable()
 export class CallsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => TranscriptService))
+    private readonly transcriptService: TranscriptService,
+  ) {}
 
   async getSessionByAppointmentId(appointmentId: string) {
     return this.prisma.callSession.findUnique({
@@ -140,11 +147,21 @@ export class CallsService {
   async endCall(callSessionId: string, userId: string) {
     await this.ensureParticipant(callSessionId, userId);
 
-    return this.prisma.callSession.update({
+    const session = await this.prisma.callSession.update({
       where: { id: callSessionId },
       data: { status: CallStatus.ENDED, endedAt: new Date() },
       select: callSessionSelect,
     });
+
+    // Trigger ML extraction and summary generation
+    try {
+      console.log(`[calls] triggering summary generation for session: ${callSessionId}`);
+      await this.transcriptService.generateSummary(callSessionId);
+    } catch (err) {
+      console.error(`[calls] failed to generate summary:`, err);
+    }
+
+    return session;
   }
 
   async assertParticipant(callSessionId: string, userId: string) {

@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaService } from '../prisma.service';
 import { CallsController } from './calls.controller';
 import { CallsGateway } from './calls.gateway';
 import { CallsService } from './calls.service';
+import { TranscriptModule } from '../transcript/transcript.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CallsService } from './calls.service';
         expiresIn: Number(process.env.JWT_EXPIRES_IN) || 60 * 60 * 24 * 7,
       },
     }),
+    forwardRef(() => TranscriptModule),
   ],
   controllers: [CallsController],
   providers: [CallsGateway, CallsService, PrismaService],

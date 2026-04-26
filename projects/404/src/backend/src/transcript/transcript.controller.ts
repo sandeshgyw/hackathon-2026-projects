@@ -41,4 +41,10 @@ export class TranscriptController {
   getSummary(@Param('callSessionId') callSessionId: string) {
     return this.transcriptService.getSummary(callSessionId);
   }
+
+  /** Mark medications as applied/confirmed */
+  @Post(':callSessionId/apply-medications')
+  applyMedications(@Param('callSessionId') callSessionId: string) {
+    return this.transcriptService.applyMedications(callSessionId);
+  }
 }

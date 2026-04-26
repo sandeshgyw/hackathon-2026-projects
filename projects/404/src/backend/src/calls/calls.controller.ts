@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Post, Body, Req } from '@nestjs/common';
 import { CallsService } from './calls.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
@@ -15,5 +15,10 @@ export class CallsController {
   @Get('session/:appointmentId')
   getSessionByAppointment(@Param('appointmentId') appointmentId: string) {
     return this.callsService.getSessionByAppointmentId(appointmentId);
+  }
+
+  @Post('end')
+  endCall(@Body('callSessionId') callSessionId: string, @Req() req: any) {
+    return this.callsService.endCall(callSessionId, req.user.sub);
   }
 }

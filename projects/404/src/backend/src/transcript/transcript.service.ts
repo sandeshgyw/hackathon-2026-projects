@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { SpeechClient } from '@google-cloud/speech';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../prisma.service';
-
 import { CallsGateway } from '../calls/calls.gateway';
 
 @Injectable()
@@ -12,7 +13,9 @@ export class TranscriptService {
 
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => CallsGateway))
     private readonly callsGateway: CallsGateway,
+    private readonly httpService: HttpService,
   ) {
     this.speechClient = new SpeechClient();
     this.gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -78,24 +81,50 @@ export class TranscriptService {
     if (chunks.length === 0) throw new NotFoundException('No transcript found for this session');
 
     // Build readable transcript
-    const transcript = chunks
+    const fullTranscript = chunks
       .map((c) => `${c.speaker}: ${c.content}`)
       .join('\n');
 
-    const prompt = `You are a medical scribe. Below is a transcript of a telemedicine consultation between a Doctor and Patient.
+    // 1. Call FastAPI for structured extraction
+    let mlExtracted = {
+      symptoms: [] as string[],
+      conditions: [] as string[],
+      medicines: [] as string[],
+      dosages: [] as string[],
+      instructions: [] as string[],
+      advice: [] as string[],
+      summary: ''
+    };
 
-TRANSCRIPT:
-${transcript}
+    try {
+      console.log(`[transcript] calling FastAPI at http://localhost:8000/extract`);
+      const response = await firstValueFrom(
+        this.httpService.post('http://localhost:8000/extract', { transcript: fullTranscript })
+      );
+      mlExtracted = response.data;
+    } catch (err) {
+      console.error(`[transcript] FastAPI call failed:`, err?.message);
+      // Fallback: we will rely entirely on Gemini below
+    }
 
-Generate a structured clinical summary in JSON with these exact fields:
-{
-  "summary": "A 2-4 sentence SOAP-style clinical summary",
-  "diagnoses": ["list", "of", "diagnoses"],
-  "medications": ["list", "of", "medications mentioned"],
-  "followUp": "Follow-up instructions or null"
-}
+    // 2. Call Gemini for clinical summary (using ML results as context if available)
+    const prompt = `You are a medical scribe. Below is a transcript of a telemedicine consultation.
+    
+    TRANSCRIPT:
+    ${fullTranscript}
+    
+    ML EXTRACTED DATA (USE AS HINTS):
+    ${JSON.stringify(mlExtracted)}
 
-Return ONLY valid JSON, no markdown or explanation.`;
+    Generate a structured clinical summary in JSON with these exact fields:
+    {
+      "summary": "A 2-4 sentence SOAP-style clinical summary",
+      "diagnoses": ["list", "of", "confirmed", "or", "suspected", "diagnoses"],
+      "medications": ["list", "of", "recommended", "medications"],
+      "followUp": "Follow-up instructions or null"
+    }
+
+    Return ONLY valid JSON.`;
 
     const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
     const result = await model.generateContent(prompt);
@@ -105,7 +134,12 @@ Return ONLY valid JSON, no markdown or explanation.`;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      parsed = { summary: raw, diagnoses: [], medications: [], followUp: undefined };
+      parsed = { 
+        summary: mlExtracted.summary || raw, 
+        diagnoses: mlExtracted.conditions || [], 
+        medications: mlExtracted.medicines || [], 
+        followUp: undefined 
+      };
     }
 
     // Upsert summary in DB
@@ -133,5 +167,20 @@ Return ONLY valid JSON, no markdown or explanation.`;
 
   async getSummary(callSessionId: string) {
     return this.prisma.consultationSummary.findUnique({ where: { callSessionId } });
+  }
+
+  // ─── Apply Medications ────────────────────────────────────────────────────
+
+  async applyMedications(callSessionId: string) {
+    const summary = await this.prisma.consultationSummary.findUnique({
+      where: { callSessionId },
+    });
+
+    if (!summary) throw new NotFoundException('Summary not found');
+
+    return this.prisma.consultationSummary.update({
+      where: { callSessionId },
+      data: { isMedicationApplied: true },
+    });
   }
 }

@@ -122,6 +122,7 @@ export function VideoConsultationPage() {
       <CallEndedScreen
         callDuration={state.callDuration}
         formatDuration={formatDuration}
+        callSessionId={state.callSessionId}
         onGoBack={handleGoBack}
       />
     );

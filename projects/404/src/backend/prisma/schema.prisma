@@ -258,13 +258,14 @@ model TranscriptChunk {
 }
 
 model ConsultationSummary {
-  id            String   @id @default(uuid())
-  callSessionId String   @unique
-  summary       String
-  diagnoses     String[]
-  medications   String[]
-  followUp      String?
-  createdAt     DateTime @default(now())
+  id                   String   @id @default(uuid())
+  callSessionId        String   @unique
+  summary              String
+  diagnoses            String[]
+  medications          String[]
+  followUp             String?
+  isMedicationApplied  Boolean  @default(false)
+  createdAt            DateTime @default(now())
 
   callSession CallSession @relation(fields: [callSessionId], references: [id])
 

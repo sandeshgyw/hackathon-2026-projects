@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "./useAuth";
 import { useAudioTranscript } from "./useAudioTranscript";
+import { useEndCallMutation } from "@/apis/callsApi";
 
 const SOCKET_URL = (
   (import.meta.env.VITE_API_URL as string) || "http://localhost:3000/api"
@@ -50,6 +51,7 @@ export interface ConsultationState {
 
 export function useVideoConsultation(appointmentId?: string) {
   const { user } = useAuth();
+  const [endCallApi] = useEndCallMutation();
   const [state, setState] = useState<ConsultationState>({
     phase: "checking-permissions",
     cameraPermission: "pending",
@@ -485,15 +487,17 @@ export function useVideoConsultation(appointmentId?: string) {
     isAloneRef.current = false;
   }, []);
 
-  const endCall = useCallback(() => {
-    if (socketRef.current && callSessionIdRef.current) {
-      socketRef.current.emit("call:end", {
-        callSessionId: callSessionIdRef.current,
-      });
+  const endCall = useCallback(async () => {
+    if (callSessionIdRef.current) {
+      try {
+        await endCallApi({ callSessionId: callSessionIdRef.current }).unwrap();
+      } catch (err) {
+        console.error("[useVideoConsultation] failed to end call via API:", err);
+      }
     }
     cleanupCall();
     setState((prev) => ({ ...prev, phase: "call-ended", localStream: null }));
-  }, [cleanupCall]);
+  }, [cleanupCall, endCallApi]);
 
   const reconnect = useCallback(() => {
     setState((prev) => ({ ...prev, phase: "reconnecting" }));
