@@ -64,8 +64,9 @@ def _render_patient_dashboard():
         st.write(f"**Height (cm):** {patient.get('height_cm', 'NA')}")
         st.write(f"**Weight (kg):** {patient.get('weight_kg', 'NA')}")
 
-    allergies_text = ", ".join([a.get("allergen", "") for a in allergies]) or "None"
-    conditions_text = ", ".join([c.get("condition_name", "") for c in conditions]) or "None"
+    # FIX: Using .get() with default string to avoid join errors
+    allergies_text = ", ".join([str(a.get("allergen", "")) for a in allergies]) or "None"
+    conditions_text = ", ".join([str(c.get("condition_name", "")) for c in conditions]) or "None"
     st.write(f"**Allergies:** {allergies_text}")
     st.write(f"**Known Conditions:** {conditions_text}")
 
@@ -75,18 +76,26 @@ def _render_patient_dashboard():
     st.write(f"**Email:** {physician.get('email', 'Not Provided')}")
 
     with st.expander("View FHIR Patient Data (Table)", expanded=True):
-        fhir_patient = st.session_state.get("user_profile", {})
+        from db.db import get_patient_as_fhir
+        fhir_patient = get_patient_as_fhir(patient_id)
         
-        # Prepare Data
+        extensions = fhir_patient.get("extension", [])
+        h_val = next((f"{ext['valueQuantity']['value']} cm" for ext in extensions if "height" in ext["url"]), "N/A")
+        w_val = next((f"{ext['valueQuantity']['value']} kg" for ext in extensions if "weight" in ext["url"]), "N/A")
+
         summary_rows = [
             {"Field": "Resource Type", "Value": fhir_patient.get("resourceType", "Patient")},
-            {"Field": "FHIR ID", "Value": fhir_patient.get("id", patient_id)},
-            {"Field": "Gender", "Value": fhir_patient.get("gender", "NA")},
-            {"Field": "Birth Date", "Value": fhir_patient.get("birthDate", "NA")},
+            {"Field": "FHIR ID", "Value": fhir_patient.get("id", "N/A")},
+            {"Field": "Full Name", "Value": fhir_patient["name"][0].get("text", "N/A") if fhir_patient.get("name") else "N/A"},
+            {"Field": "Gender", "Value": fhir_patient.get("gender", "N/A").capitalize()},
+            {"Field": "Birth Date", "Value": fhir_patient.get("birthDate", "N/A")},
+            {"Field": "Location", "Value": fhir_patient["address"][0].get("text", "N/A") if fhir_patient.get("address") else "N/A"},
+            {"Field": "Height", "Value": h_val},
+            {"Field": "Weight", "Value": w_val},
         ]
 
         st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
-
+    
     col_a, col_b = st.columns(2)
     with col_a:
         if st.button("Go to Symptom Checker", type="primary", use_container_width=True):
@@ -98,7 +107,6 @@ def _render_patient_dashboard():
             st.rerun()
 
 def _render_doctor_login():
-    """Renders the simplified doctor login using email bridge."""
     st.subheader("👨‍⚕️ Provider Portal")
     st.caption("Doctors: Enter your email to see patients who have assigned you.")
     
@@ -111,7 +119,6 @@ def _render_doctor_login():
             st.warning("Please enter your professional email.")
             return
 
-        # Set Session State for Doctor
         st.session_state.is_authenticated = True
         st.session_state.user_profile = {
             "name": doc_name if doc_name else "Provider",
@@ -143,9 +150,15 @@ def _render_login_tab():
 
         patient_id = patient_data["id"]
         fhir_profile = _load_fhir_patient_profile(patient_id)
+        
+        # --- FIX: Set Role and Land on Patient Dashboard ---
         st.session_state.is_authenticated = True
         st.session_state.patient_id = patient_id
-        st.session_state.user_profile = fhir_profile or dict(patient_data)
+        
+        profile = fhir_profile or dict(patient_data)
+        profile["role"] = "patient" # Ensure role is saved
+        st.session_state.user_profile = profile
+        
         st.session_state[CURRENT_PAGE_KEY] = "Dashboard"
         st.rerun()
 
@@ -182,7 +195,6 @@ def _render_signup_tab():
 
             pid = save_patient(clean_email, name.strip(), int(age), sex, float(height_cm), float(weight_kg), place.strip())
             
-            # Save related info
             for a in [x.strip() for x in allergies_text.split(",") if x.strip()]:
                 save_allergy(pid, a)
             for c in [x.strip() for x in conditions_text.split(",") if x.strip()]:
@@ -191,9 +203,15 @@ def _render_signup_tab():
                 save_physician(pid, doctor_name.strip() or "Provider", "Clinic", dr_email.strip())
 
             fhir_profile = _load_fhir_patient_profile(pid)
+            
+            # --- FIX: Set Role and Land on Patient Dashboard ---
             st.session_state.is_authenticated = True
             st.session_state.patient_id = pid
-            st.session_state.user_profile = fhir_profile or {"name": name.strip(), "id": pid}
+            
+            profile = fhir_profile or {"name": name.strip(), "id": pid}
+            profile["role"] = "patient" # Ensure role is saved
+            st.session_state.user_profile = profile
+            
             st.session_state[CURRENT_PAGE_KEY] = "Dashboard"
             st.rerun()
 
@@ -201,8 +219,6 @@ def show():
     init_session()
 
     if st.session_state.get("is_authenticated"):
-        # If logged in as doctor, show dashboard logic happens in main.py
-        # But if they end up here somehow while logged in as patient:
         if st.session_state.user_profile.get("role") == "doctor":
              st.info("You are logged in as a provider. Use the sidebar to view the Doctor Dashboard.")
         else:
