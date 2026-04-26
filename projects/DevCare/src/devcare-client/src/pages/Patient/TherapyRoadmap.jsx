@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Play, CalendarDays, ClipboardCheck, Loader2, Info } from 'lucide-react'
 import { getMyPlans } from '../../api/rehabApi'
 
-function MySessionsPage() {
+function TherapyRoadmap() {
   const navigate = useNavigate()
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
@@ -18,13 +18,14 @@ function MySessionsPage() {
   return (
     <div className="animate-fade-in pb-12">
       {/* Header */}
-      <div className="mb-8 flex items-center gap-4">
-        <button onClick={() => navigate('/dashboard/patient')} className="rounded-lg p-2 hover:bg-[var(--color-surface)]">
-          <ArrowLeft className="h-6 w-6 text-[var(--color-text)]" />
-        </button>
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text)]">My Recovery Sessions</h1>
-          <p className="text-sm text-[var(--color-text-muted)]">View assigned plans and complete your daily roadmap.</p>
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)] mb-2">
+             <div className="h-1 w-4 bg-[var(--color-primary)] rounded-full"></div>
+             Recovery Sessions
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-text)]">Sessions</h1>
+          <p className="text-lg font-medium text-[var(--color-text-muted)] mt-2">View assigned plans and complete your daily roadmap.</p>
         </div>
       </div>
 
@@ -118,4 +119,4 @@ function MySessionsPage() {
   )
 }
 
-export default MySessionsPage
+export default TherapyRoadmap

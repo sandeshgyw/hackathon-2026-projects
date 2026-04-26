@@ -17,9 +17,9 @@ import ShareConnection from './pages/doctor/ShareConnection'
 // Patient Pages
 import PatientDashboard from './pages/patient/Dashboard'
 import TherapySession from './pages/patient/TherapySession'
-import TherapyLibrary from './pages/patient/TherapyLibrary'
+import SessionResult from './pages/patient/SessionResult'
 import SessionDetail from './pages/patient/SessionDetail'
-import MySessions from './pages/patient/MySessions'
+import TherapyRoadmap from './pages/patient/TherapyRoadmap'
 import Progress from './pages/patient/Progress'
 import Feedback from './pages/patient/Feedback'
 import JoinDoctor from './pages/patient/JoinDoctor'
@@ -122,7 +122,7 @@ function App() {
           path="/session-result"
           element={
             <ProtectedRoute allowedRoles={['patient']}>
-              <TherapyLibrary />
+              <SessionResult />
             </ProtectedRoute>
           }
         />
@@ -138,7 +138,7 @@ function App() {
           path="/my-sessions"
           element={
             <ProtectedRoute allowedRoles={['patient']}>
-              <MySessions />
+              <TherapyRoadmap />
             </ProtectedRoute>
           }
         />

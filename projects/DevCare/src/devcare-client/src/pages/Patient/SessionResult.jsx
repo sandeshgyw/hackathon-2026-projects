@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Search, Filter, MessageSquareText, History, Loader2, Info, CheckCircle2, Timer, Target } from 'lucide-react'
+import { ArrowLeft, Search, Filter, MessageSquareText, History, Loader2, Info, CheckCircle2, Timer, Target, Activity } from 'lucide-react'
 import { getSessionHistory } from '../../api/rehabApi'
 
-function TherapyLibraryPage() {
+function SessionResult() {
   const navigate = useNavigate()
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,16 +35,18 @@ function TherapyLibraryPage() {
   return (
     <div className="animate-fade-in pb-12">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => navigate('/dashboard/patient')} className="rounded-lg p-2 hover:bg-[var(--color-surface)]">
-            <ArrowLeft className="h-6 w-6 text-[var(--color-text)]" />
-          </button>
+      <div className="mb-12">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--color-text)]">Session Result</h1>
-            <p className="text-sm text-[var(--color-text-muted)]">Analyze the results and anatomical metrics of your past sessions.</p>
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)] mb-2">
+               <div className="h-1 w-4 bg-[var(--color-primary)] rounded-full"></div>
+               Performance Overview
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-[var(--color-text)]">Progress & History</h1>
+            <p className="text-lg font-medium text-[var(--color-text-muted)] mt-2">Analyze the results and anatomical metrics of your past sessions.</p>
           </div>
         </div>
+      </div>
 
         {/* Search & Filter */}
         <div className="flex gap-4">
@@ -61,7 +63,6 @@ function TherapyLibraryPage() {
             Filter
           </button>
         </div>
-      </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Sessions Grid */}
@@ -201,4 +202,4 @@ function TherapyLibraryPage() {
   )
 }
 
-export default TherapyLibraryPage
+export default SessionResult
