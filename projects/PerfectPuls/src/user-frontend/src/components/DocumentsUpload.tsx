@@ -10,6 +10,7 @@ export type UploadedFile = {
   size: number;
   uploadDate: string;
   type: string;
+  isLatest?: boolean;
 };
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
@@ -116,6 +117,7 @@ export default function DocumentsUpload({ files, setFiles }: Props) {
       uploadDate: today,
       type: file.type,
       status: "uploading",
+      isLatest: true, // Mark as latest
     };
 
     // Add to list immediately with uploading state
@@ -205,6 +207,12 @@ export default function DocumentsUpload({ files, setFiles }: Props) {
     }
   }
 
+  function clearAllFiles() {
+    setUploadEntries([]);
+    setFiles([]);
+    sessionStorage.removeItem('policy-pilot-files');
+  }
+
   const successCount = uploadEntries.filter((e) => e.status === "success").length;
 
   return (
@@ -271,7 +279,18 @@ export default function DocumentsUpload({ files, setFiles }: Props) {
             <h3 className="font-semibold text-gray-700 text-sm">
               {loadingDocs ? "Documents" : `${allEntries.length} document${allEntries.length !== 1 ? "s" : ""}`}
             </h3>
-            <span className="text-xs text-gray-400">Status</span>
+            <div className="flex items-center gap-3">
+              {uploadEntries.length > 0 && (
+                <button
+                  onClick={clearAllFiles}
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                  title="Clear session files"
+                >
+                  Clear All
+                </button>
+              )}
+              <span className="text-xs text-gray-400">Status</span>
+            </div>
           </div>
 
           <div className="divide-y divide-gray-100">
@@ -381,6 +400,9 @@ export default function DocumentsUpload({ files, setFiles }: Props) {
                 ✓ {successCount} document
                 {successCount !== 1 ? "s" : ""} processed — check the
                 Knowledge Graph tab
+              </p>
+              <p className="text-xs text-teal-600 mt-1">
+                Files persist during your browser session
               </p>
             </div>
           )}
