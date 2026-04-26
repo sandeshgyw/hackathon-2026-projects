@@ -1,13 +1,19 @@
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { AdminRoutes } from "@/routes/AdminRoutes"
+import { PhysicianRoutes } from "@/routes/PhysicianRoutes"
+import { PatientRoutes } from "@/routes/PatientRoutes"
+import { PublicRoutes } from "@/routes/PublicRoutes"
 
 function App() {
-
   return (
-    <>
-      <div className="flex flex-col items-center justify-center h-screen">
-        <h1>404</h1>
-        <p>Page not found</p>
-      </div>
-    </>
+    <Router>
+      <Routes>
+        <Route path="/admin/*" element={<AdminRoutes />} />
+        <Route path="/physician/*" element={<PhysicianRoutes />} />
+        <Route path="/patient/*" element={<PatientRoutes />} />
+        <Route path="/*" element={<PublicRoutes />} />
+      </Routes>
+    </Router>
   )
 }
 
