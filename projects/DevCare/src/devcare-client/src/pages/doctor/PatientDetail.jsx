@@ -501,34 +501,41 @@ function PatientDetail() {
               </div>
             )}
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                <div className="h-1 w-4 bg-slate-200 rounded-full"></div>
-                Biometric Body Part Scores
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {[
-                  { part: 'Arms', score: 85, color: 'bg-emerald-500' },
-                  { part: 'Knees', score: 85, color: 'bg-emerald-500' },
-                  { part: 'Hips', score: 84, color: 'bg-emerald-500' },
-                  { part: 'Ankles', score: 84, color: 'bg-emerald-500' },
-                  { part: 'Shoulders', score: 80, color: 'bg-blue-500' }
-                ].map((score, idx) => (
-                  <div key={idx} className="p-4 rounded-xl bg-white border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-500">{score.part}</span>
-                        <span className="text-sm font-black text-slate-900">{score.score}</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${score.color} transition-all duration-1000`}
-                          style={{ width: `${score.score}%` }}
-                        />
-                    </div>
+            {(() => {
+              const latestPlanSession = sessions.find(s => s.plan_id === selectedPlan.id && s.body_part_scores && s.body_part_scores.length > 0);
+              if (!latestPlanSession) return null;
+              
+              const scores = latestPlanSession.body_part_scores.map(s => ({
+                part: s.part,
+                score: s.score,
+                color: s.score >= 90 ? 'bg-emerald-500' : s.score >= 80 ? 'bg-blue-500' : 'bg-amber-500'
+              }));
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    <div className="h-1 w-4 bg-slate-200 rounded-full"></div>
+                    Biometric Body Part Scores (Latest Session)
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {scores.map((score, idx) => (
+                      <div key={idx} className="p-4 rounded-xl bg-white border border-slate-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-slate-500">{score.part}</span>
+                            <span className="text-sm font-black text-slate-900">{score.score}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${score.color} transition-all duration-1000`}
+                              style={{ width: `${score.score}%` }}
+                            />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
             {selectedPlan.tasks && selectedPlan.tasks.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
