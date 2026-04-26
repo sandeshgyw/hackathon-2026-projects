@@ -1,22 +1,82 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Activity, Users, PlusCircle, ArrowUpRight, TrendingUp, Calendar, ChevronRight } from 'lucide-react'
+import { Activity, Users, PlusCircle, ArrowUpRight, TrendingUp, Calendar, ChevronRight, Loader2 } from 'lucide-react'
+import { getMyPatients } from '../../api/connectionsApi'
+import { getPatientSessions } from '../../api/rehabApi'
 
 const USERNAME_KEY = 'devcare_username'
 
 function Dashboard() {
   const username = localStorage.getItem(USERNAME_KEY)
 
-  // Mock data
-  const patients = [
-    { id: 1, name: 'Alice Smith', progress: 75, lastActivity: '2 hours ago', initials: 'AS' },
-    { id: 2, name: 'Bob Johnson', progress: 45, lastActivity: '5 hours ago', initials: 'BJ' },
-    { id: 3, name: 'Charlie Davis', progress: 90, lastActivity: 'Yesterday', initials: 'CD' },
-  ]
+  const [patients, setPatients] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [statsData, setStatsData] = useState({ totalPatients: 0, totalSessions: 0, pendingReviews: 0 })
+  const [insight, setInsight] = useState("AI is analyzing patient data...")
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const patientsData = await getMyPatients()
+        
+        let totalSessions = 0;
+        let pendingReviews = 0;
+        
+        const patientsWithSessions = await Promise.all(patientsData.map(async (p) => {
+          try {
+            const sessions = await getPatientSessions(p.id);
+            totalSessions += sessions.length;
+            pendingReviews += sessions.filter(s => !s.feedback).length;
+            
+            const lastSessionDate = sessions.length > 0 
+              ? new Date(sessions[0].started_at).toLocaleDateString() 
+              : 'No sessions yet';
+              
+            return {
+              ...p,
+              initials: p.name.split(' ').map(n => n[0]).join(''),
+              lastActivity: lastSessionDate,
+              sessionsCount: sessions.length
+            }
+          } catch (e) {
+            return {
+              ...p,
+              initials: p.name.split(' ').map(n => n[0]).join(''),
+              lastActivity: 'N/A',
+              sessionsCount: 0
+            }
+          }
+        }))
+
+        patientsWithSessions.sort((a, b) => b.sessionsCount - a.sessionsCount)
+
+        setPatients(patientsWithSessions.slice(0, 5))
+        setStatsData({
+          totalPatients: patientsData.length,
+          totalSessions: totalSessions,
+          pendingReviews: pendingReviews
+        })
+        
+        if (patientsWithSessions.length > 0 && patientsWithSessions[0].sessionsCount > 0) {
+           setInsight(`Based on recent movement data, ${patientsWithSessions[0].name} has completed several sessions. Consider reviewing their progress.`)
+        } else {
+           setInsight("No recent session data available. Consider assigning new therapy plans to your patients.")
+        }
+
+      } catch (error) {
+        console.error("Failed to load dashboard data", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
 
   const stats = [
-    { label: 'Total Patients', val: '24', icon: Users, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Active Sessions', val: '12', icon: Activity, color: 'bg-green-50 text-green-600' },
-    { label: 'New Requests', val: '3', icon: PlusCircle, color: 'bg-orange-50 text-orange-600' },
+    { label: 'Total Patients', val: statsData.totalPatients.toString(), icon: Users, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Total Sessions', val: statsData.totalSessions.toString(), icon: Activity, color: 'bg-green-50 text-green-600' },
+    { label: 'Pending Reviews', val: statsData.pendingReviews.toString(), icon: PlusCircle, color: 'bg-orange-50 text-orange-600' },
   ]
 
   const handleGenerateSuggestions = () => {
@@ -55,7 +115,9 @@ function Dashboard() {
              </div>
              <div>
                <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-widest">{stat.label}</p>
-               <h3 className="text-2xl font-black mt-1">{stat.val}</h3>
+               <h3 className="text-2xl font-black mt-1">
+                 {loading ? <Loader2 className="animate-spin text-slate-400" size={24} /> : stat.val}
+               </h3>
              </div>
           </div>
         ))}
@@ -76,27 +138,33 @@ function Dashboard() {
             </div>
             
             <div className="divide-y divide-[var(--color-border-soft)]">
-              {patients.map(patient => (
-                <div key={patient.id} className="flex items-center justify-between p-8 hover:bg-slate-50/50 transition-colors group cursor-pointer">
-                  <div className="flex items-center gap-5">
-                    <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-[var(--color-secondary)] group-hover:bg-[var(--color-primary-soft)] group-hover:text-[var(--color-primary)] transition-colors">
-                      {patient.initials}
+              {loading ? (
+                <div className="p-8 text-center text-[var(--color-text-muted)] font-medium">Loading patients...</div>
+              ) : patients.length > 0 ? (
+                patients.map(patient => (
+                  <div key={patient.id} className="flex items-center justify-between p-8 hover:bg-slate-50/50 transition-colors group cursor-pointer">
+                    <div className="flex items-center gap-5">
+                      <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-[var(--color-secondary)] group-hover:bg-[var(--color-primary-soft)] group-hover:text-[var(--color-primary)] transition-colors">
+                        {patient.initials}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-lg">{patient.name}</h4>
+                        <p className="text-sm text-[var(--color-text-muted)] font-medium">Last Session: {patient.lastActivity}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-lg">{patient.name}</h4>
-                      <p className="text-sm text-[var(--color-text-muted)] font-medium">Last Session: {patient.lastActivity}</p>
+                    <div className="flex items-center gap-10">
+                      <Link 
+                        to={`/doctor/patient/${patient.id}`}
+                        className="h-10 w-10 flex items-center justify-center rounded-full border border-[var(--color-border)] hover:bg-white hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] shadow-sm transition-all"
+                      >
+                        <ChevronRight size={18} />
+                      </Link>
                     </div>
                   </div>
-                  <div className="flex items-center gap-10">
-                    <Link 
-                      to={`/doctor/patient/${patient.id}`}
-                      className="h-10 w-10 flex items-center justify-center rounded-full border border-[var(--color-border)] hover:bg-white hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] shadow-sm transition-all"
-                    >
-                      <ChevronRight size={18} />
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="p-8 text-center text-[var(--color-text-muted)] font-medium">No recent patients connected.</div>
+              )}
             </div>
           </section>
         </div>
@@ -112,7 +180,7 @@ function Dashboard() {
                 <h3 className="text-lg font-bold">AI Clinical Insight</h3>
              </div>
              <p className="text-sm leading-relaxed opacity-80 font-medium">
-               "Based on recent movement data, <strong>Charlie Davis</strong> is ready for advanced stability exercises. Consider adjusting his plan."
+               "{insight}"
              </p>
              <button 
                onClick={handleGenerateSuggestions}
