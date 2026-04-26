@@ -2,6 +2,9 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.auth import get_user_model
+from user.models import UserProfile
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -36,3 +39,13 @@ class RegisterView(APIView):
 class LoginView(TokenObtainPairView):
 	permission_classes = [AllowAny]
 	serializer_class = RoleTokenObtainPairSerializer
+
+
+class PatientListView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		User = get_user_model()
+		patients = User.objects.filter(profile__role=UserProfile.ROLE_PATIENT)
+		data = [{"id": p.id, "username": p.username} for p in patients]
+		return Response(data)

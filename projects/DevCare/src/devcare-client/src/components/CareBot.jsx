@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { MessageSquare, Sparkles, X, Send, ClipboardList, AlertCircle, Bot, Edit2, Trash2, Plus, ChevronDown, ChevronUp, Database } from 'lucide-react'
+import { MessageSquare, Sparkles, X, Send, ClipboardList, AlertCircle, Bot, Edit2, Trash2, Plus, ChevronDown, ChevronUp, Database, CheckCircle2 } from 'lucide-react'
 
 function CareBot() {
   const [isOpen, setIsOpen] = useState(false)
@@ -8,7 +8,14 @@ function CareBot() {
     { role: 'bot', content: "Hello Dr. Robert! I'm your Care Assistant. Need help generating a targeted rehab plan or a todo list for a patient?" }
   ])
   const [isGenerating, setIsGenerating] = useState(false)
-  const [expandedTasks, setExpandedTasks] = useState({}) // { 'msgIdx-taskIdx': true }
+  const [expandedTasks, setExpandedTasks] = useState({})
+  const [showSyncUI, setShowSyncUI] = useState(null) // index of message being synced
+  const [patients, setPatients] = useState([])
+  const [selectedPatient, setSelectedPatient] = useState('')
+  const [planName, setPlanName] = useState('Week-1')
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncSuccess, setSyncSuccess] = useState(false)
+  
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -18,6 +25,29 @@ function CareBot() {
   useEffect(() => {
     if (isOpen) scrollToBottom()
   }, [messages, isOpen])
+
+  // Fetch patients when sync UI opens
+  useEffect(() => {
+    if (showSyncUI !== null) {
+      fetchPatients()
+    }
+  }, [showSyncUI])
+
+  const fetchPatients = async () => {
+    try {
+      const token = localStorage.getItem('devcare_access_token')
+      const res = await fetch('http://localhost:8000/api/user/patients/', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setPatients(data)
+        if (data.length > 0) setSelectedPatient(data[0].id)
+      }
+    } catch (err) {
+      console.error('Failed to fetch patients:', err)
+    }
+  }
 
   const handleSend = async () => {
     if (!query.trim()) return
@@ -61,7 +91,6 @@ function CareBot() {
       
       const data = await res.json()
       
-      // Ensure todoList items are objects as expected
       const sanitizedTodoList = (data.todoList || []).map(item => {
         if (typeof item === 'string') {
            return { name: item, metadata: '', instruction: '' }
@@ -83,6 +112,59 @@ function CareBot() {
       }])
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const handleSync = async (msgIdx) => {
+    if (!selectedPatient) return
+    setIsSyncing(true)
+    
+    try {
+      const token = localStorage.getItem('devcare_access_token')
+      const todoList = messages[msgIdx].todoList
+      
+      // Parse exercises from todoList
+      const exercises = todoList.map((item, index) => {
+        // Extract ID from metadata "ID:7 Name:..."
+        const idMatch = item.metadata?.match(/ID:(\d+)/)
+        const exerciseId = idMatch ? parseInt(idMatch[1]) : null
+        
+        return {
+          exercise_id: exerciseId,
+          order: index + 1,
+          target_reps: 10 // Default reps, can be parsed from instruction if needed
+        }
+      }).filter(ex => ex.exercise_id !== null)
+
+      const payload = {
+        patient_id: parseInt(selectedPatient),
+        name: planName,
+        exercises: exercises
+      }
+
+      const res = await fetch('http://localhost:8000/api/rehab/plans/', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (res.ok) {
+        setSyncSuccess(true)
+        setTimeout(() => {
+          setSyncSuccess(false)
+          setShowSyncUI(null)
+        }, 2000)
+      } else {
+        throw new Error('Sync failed')
+      }
+    } catch (err) {
+      console.error('Sync Error:', err)
+      alert('Failed to sync plan to patient app.')
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -181,7 +263,6 @@ function CareBot() {
                          const isExpanded = expandedTasks[`${i}-${idx}`]
                          return (
                            <div key={idx} className="group relative rounded-xl bg-white border border-slate-100 overflow-hidden shadow-sm hover:border-blue-200 transition-all">
-                              {/* Main Row (Visible) */}
                               <div className="p-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/50" onClick={() => toggleExpand(i, idx)}>
                                  <div className="flex items-center gap-3">
                                     <div className="h-5 w-5 rounded-full border-2 border-blue-200 shrink-0 flex items-center justify-center">
@@ -205,27 +286,22 @@ function CareBot() {
                                  </div>
                               </div>
 
-                              {/* Expanded Details (Hidden by default) */}
                               {isExpanded && (
                                 <div className="px-3 pb-3 pt-1 border-t border-slate-50 bg-slate-50/30 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                   {/* Database Metadata */}
                                    <div className="flex items-start gap-2 p-2 rounded-lg bg-blue-50/50 border border-blue-100/50">
                                       <Database size={12} className="text-blue-500 mt-0.5 shrink-0" />
                                       <input 
                                         value={item.metadata || ''}
                                         onChange={(e) => updateTask(i, idx, 'metadata', e.target.value)}
                                         className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] font-mono text-blue-600 uppercase tracking-tighter"
-                                        placeholder="DATABASE METADATA (ID NAME JOINT MIN MAX)"
+                                        placeholder="DATABASE METADATA"
                                       />
                                    </div>
-                                   
-                                   {/* Instructions */}
                                    <textarea 
                                       rows={Math.max(2, Math.ceil((item.instruction?.length || 0) / 40))}
                                       value={item.instruction || ''}
                                       onChange={(e) => updateTask(i, idx, 'instruction', e.target.value)}
                                       className="w-full bg-transparent border-none focus:ring-0 p-0 text-[12px] text-slate-600 leading-relaxed resize-none overflow-hidden"
-                                      placeholder="Instruction details..."
                                       onInput={(e) => {
                                         e.target.style.height = 'auto';
                                         e.target.style.height = e.target.scrollHeight + 'px';
@@ -238,9 +314,62 @@ function CareBot() {
                        })}
                        
                        {msg.todoList.length > 0 && (
-                         <button className="w-full mt-2 py-2 rounded-lg bg-emerald-50 text-emerald-600 text-[11px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-colors shadow-sm">
-                            Sync to Patient App
-                         </button>
+                         <div className="mt-4 pt-4 border-t border-slate-100">
+                           {showSyncUI === i ? (
+                             <div className="space-y-4 animate-in zoom-in-95 duration-200">
+                               <div className="grid grid-cols-2 gap-3">
+                                 <div className="space-y-1">
+                                   <label className="text-[10px] font-bold text-slate-400 uppercase">Target Patient</label>
+                                   <select 
+                                     value={selectedPatient}
+                                     onChange={(e) => setSelectedPatient(e.target.value)}
+                                     className="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 outline-none focus:border-blue-400 transition-colors"
+                                   >
+                                     <option value="">Select Patient...</option>
+                                     {patients.map(p => (
+                                       <option key={p.id} value={p.id}>{p.username}</option>
+                                     ))}
+                                   </select>
+                                 </div>
+                                 <div className="space-y-1">
+                                   <label className="text-[10px] font-bold text-slate-400 uppercase">Plan Name</label>
+                                   <input 
+                                     value={planName}
+                                     onChange={(e) => setPlanName(e.target.value)}
+                                     className="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 outline-none focus:border-blue-400 transition-colors"
+                                     placeholder="e.g. Week-1"
+                                   />
+                                 </div>
+                               </div>
+                               <div className="flex gap-2">
+                                 <button 
+                                   onClick={() => setShowSyncUI(null)}
+                                   className="flex-1 py-2 rounded-lg border border-slate-200 text-slate-500 text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors"
+                                 >
+                                   Cancel
+                                 </button>
+                                 <button 
+                                   onClick={() => handleSync(i)}
+                                   disabled={isSyncing || !selectedPatient}
+                                   className={`flex-[2] py-2 rounded-lg flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest transition-all ${
+                                     syncSuccess 
+                                       ? 'bg-emerald-500 text-white' 
+                                       : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50'
+                                   }`}
+                                 >
+                                   {isSyncing ? 'Syncing...' : syncSuccess ? <><CheckCircle2 size={14}/> Synced!</> : 'Confirm Sync'}
+                                 </button>
+                               </div>
+                             </div>
+                           ) : (
+                             <button 
+                               onClick={() => setShowSyncUI(i)}
+                               className="w-full py-3 rounded-xl bg-[var(--color-primary)] text-white text-[12px] font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                             >
+                               <Bot size={16} /> Sync to Patient App
+                             </button>
+                           )}
+                         </div>
                        )}
                     </div>
                   )}
