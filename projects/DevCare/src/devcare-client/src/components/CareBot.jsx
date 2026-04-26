@@ -9,29 +9,62 @@ function CareBot() {
   ])
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!query.trim()) return
 
-    const userMsg = { role: 'user', content: query }
+    const userQuery = query
+    const userMsg = { role: 'user', content: userQuery }
     setMessages(prev => [...prev, userMsg])
     setQuery('')
     setIsGenerating(true)
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem('devcare_access_token')
+      
+      if (!token) {
+        setMessages(prev => [...prev, { 
+          role: 'bot', 
+          content: "You need to be logged in to use Care AI. Please log in and try again." 
+        }])
+        setIsGenerating(false)
+        return
+      }
+
+      const res = await fetch('http://localhost:8000/api/rehab/chatbot/', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ query: userQuery })
+      })
+      
+      if (res.status === 401) {
+        setMessages(prev => [...prev, { 
+          role: 'bot', 
+          content: "Your session has expired. Please log out and log back in." 
+        }])
+        return
+      }
+
+      if (!res.ok) throw new Error('API error')
+      
+      const data = await res.json()
       const botMsg = { 
         role: 'bot', 
-        content: "I've analyzed the problem. Here's a suggested recovery todo list for this condition:",
-        todoList: [
-          "Increase hydration to 3L daily to reduce muscle inflammation",
-          "Perform 15 mins of light dynamic stretching before main exercises",
-          "Apply ice pack for 10 mins post-session to manage swelling",
-          "Schedule a follow-up assessment for gait analysis in 3 days"
-        ]
+        content: data.content,
+        todoList: data.todoList
       }
       setMessages(prev => [...prev, botMsg])
+    } catch (err) {
+      console.error('CareBot Error:', err)
+      setMessages(prev => [...prev, { 
+        role: 'bot', 
+        content: "Sorry, I'm having trouble connecting to the Care AI service." 
+      }])
+    } finally {
       setIsGenerating(false)
-    }, 1500)
+    }
   }
 
   return (
@@ -62,14 +95,14 @@ function CareBot() {
           <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 min-h-[350px]">
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-4 rounded-2xl text-sm font-medium leading-relaxed ${
+                <div className={`max-w-[85%] p-4 rounded-2xl text-sm font-medium leading-relaxed whitespace-pre-wrap ${
                   msg.role === 'user' 
                     ? 'bg-[var(--color-primary)] text-white shadow-md rounded-tr-none' 
                     : 'bg-white text-slate-700 shadow-sm border border-slate-100 rounded-tl-none'
                 }`}>
                   {msg.content}
                   
-                  {msg.todoList && (
+                  {msg.todoList && msg.todoList.length > 0 && (
                     <div className="mt-4 space-y-2">
                        <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">
                           <ClipboardList size={12} /> Generated Todo List
