@@ -36,7 +36,7 @@ export function Contact() {
             </div>
           </div>
           
-          <Card className="border-primary/20 shadow-lg">
+          <Card className="border-primary/20">
             <CardContent className="p-6">
               <form className="space-y-4">
                 <div className="space-y-2">

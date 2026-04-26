@@ -8,7 +8,7 @@ export function AdminDashboard() {
         <p className="text-muted-foreground">Manage your hospital units and system statistics.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-md transition-all">
+        <Card className="transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
           </CardHeader>
@@ -17,7 +17,7 @@ export function AdminDashboard() {
             <p className="text-xs text-muted-foreground">+201 since last month</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-all border-l-4 border-primary">
+        <Card className="transition-all border-l-4 border-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Physicians</CardTitle>
           </CardHeader>
@@ -26,7 +26,7 @@ export function AdminDashboard() {
             <p className="text-xs text-muted-foreground">+3 since last month</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-all">
+        <Card className="transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Appointments Today</CardTitle>
           </CardHeader>
@@ -35,7 +35,7 @@ export function AdminDashboard() {
             <p className="text-xs text-muted-foreground">+12% from yesterday</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-all">
+        <Card className="transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">System Health</CardTitle>
           </CardHeader>

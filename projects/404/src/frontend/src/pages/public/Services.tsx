@@ -10,22 +10,22 @@ export function Services() {
         </div>
         
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="p-8 pb-10 bg-muted/20 border rounded-2xl space-y-4 hover:shadow-lg transition-shadow">
+          <div className="p-8 pb-10 bg-muted/20 border rounded-2xl space-y-4 transition-shadow">
             <Activity className="h-10 w-10 text-primary" />
             <h3 className="text-2xl font-semibold">Patient Electronic Records</h3>
             <p className="text-muted-foreground leading-relaxed">Secure, HIPAA-compliant access to complete digital health files instantly synced across care providers, giving patients sovereignty over their data.</p>
           </div>
-          <div className="p-8 pb-10 bg-muted/20 border rounded-2xl space-y-4 hover:shadow-lg transition-shadow">
+          <div className="p-8 pb-10 bg-muted/20 border rounded-2xl space-y-4 transition-shadow">
             <Users className="h-10 w-10 text-primary" />
             <h3 className="text-2xl font-semibold">Telemedicine & Appointments</h3>
             <p className="text-muted-foreground leading-relaxed">Schedule, manage, and execute remote telemedicine consults or in-person visits with automated calendar bindings and smart reminders.</p>
           </div>
-          <div className="p-8 pb-10 bg-muted/20 border rounded-2xl space-y-4 hover:shadow-lg transition-shadow">
+          <div className="p-8 pb-10 bg-muted/20 border rounded-2xl space-y-4 transition-shadow">
             <Database className="h-10 w-10 text-primary" />
             <h3 className="text-2xl font-semibold">Decentralized Storage</h3>
             <p className="text-muted-foreground leading-relaxed">Future-proofing medical records by migrating them off legacy systems onto highly redundant, encrypted storage nodes for lifetime permanence.</p>
           </div>
-          <div className="p-8 pb-10 bg-muted/20 border rounded-2xl space-y-4 hover:shadow-lg transition-shadow">
+          <div className="p-8 pb-10 bg-muted/20 border rounded-2xl space-y-4 transition-shadow">
             <ShieldCheck className="h-10 w-10 text-primary" />
             <h3 className="text-2xl font-semibold">Identity Access Management</h3>
             <p className="text-muted-foreground leading-relaxed">Strict role-based access defining precisely what an Admin, Physician, or Patient can observe and manipulate, guaranteeing privacy compliance.</p>

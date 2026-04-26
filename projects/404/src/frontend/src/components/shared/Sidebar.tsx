@@ -79,7 +79,7 @@ export function Sidebar({ role }: SidebarProps) {
         "max-md:hidden md:flex",
         isCollapsed ? "md:w-20" : "md:w-64",
         // Mobile Sliding
-        mobileOpen && "max-md:absolute max-md:flex max-md:left-0 max-md:top-0 max-md:bottom-0 max-md:h-screen w-64 shadow-2xl max-md:translate-x-0"
+        mobileOpen && "max-md:absolute max-md:flex max-md:left-0 max-md:top-0 max-md:bottom-0 max-md:h-screen w-64 border-r max-md:translate-x-0"
       )}>
         {/* Mobile Header Inside Sidebar */}
         <div className="flex md:hidden items-center justify-between p-4 border-b">
@@ -92,7 +92,7 @@ export function Sidebar({ role }: SidebarProps) {
         {/* Toggle Button Desktop */}
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-6 bg-background p-1 rounded-sm border shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors z-50 cursor-pointer hidden md:flex"
+          className="absolute -right-3 top-6 bg-background p-1 rounded-sm border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors z-50 cursor-pointer hidden md:flex"
         >
           {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>

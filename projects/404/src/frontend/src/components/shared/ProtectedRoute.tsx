@@ -18,7 +18,7 @@ export function ProtectedRoute({ allowedRoles, redirectPath = "/login" }: Protec
   
   if (!matchesRole) {
     // If authenticated but wrong role, push to their appropriate dashboard home
-    return <Navigate to={`/${role}`} replace />;
+    return <Navigate to={`/${role === 'doctor' ? 'physician' : role}`} replace />;
   }
 
   return <Outlet />;

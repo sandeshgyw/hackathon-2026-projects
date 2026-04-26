@@ -37,7 +37,7 @@ export const DropdownMenuTrigger = React.forwardRef<HTMLDivElement, any>(({ clas
 export const DropdownMenuContent = React.forwardRef<HTMLDivElement, any>(({ className, children, open, align = "end", setOpen, ...props }, ref) => {
   if (!open) return null;
   return (
-    <div ref={ref} className={cn("absolute z-50 mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in zoom-in-95", align === "end" ? "right-0" : "left-0", className)} onClick={() => setOpen?.(false)} {...props}>
+    <div ref={ref} className={cn("absolute z-50 mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground animate-in fade-in zoom-in-95", align === "end" ? "right-0" : "left-0", className)} onClick={() => setOpen?.(false)} {...props}>
       {children}
     </div>
   )

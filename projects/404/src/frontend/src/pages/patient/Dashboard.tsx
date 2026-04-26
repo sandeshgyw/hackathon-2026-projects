@@ -9,7 +9,7 @@ export function PatientDashboard() {
           <h2 className="text-3xl font-bold tracking-tight text-foreground">Good Morning, John</h2>
           <p className="text-muted-foreground">Your health summary is looking great.</p>
         </div>
-        <Button className="shrink-0 bg-primary/90 shadow-md">Book Appointment</Button>
+        <Button className="shrink-0 bg-primary/90">Book Appointment</Button>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

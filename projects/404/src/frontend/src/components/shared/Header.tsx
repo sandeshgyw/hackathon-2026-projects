@@ -46,7 +46,7 @@ export function Header({ role }: { role?: string }) {
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm relative">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-2 md:gap-4">
           {user && (
@@ -54,7 +54,7 @@ export function Header({ role }: { role?: string }) {
               <Menu className="h-5 w-5" />
             </Button>
           )}
-          <Link to={user ? `/${user.role?.toLowerCase() || 'patient'}` : "/"} className="flex items-center gap-2 text-primary group cursor-pointer hover:opacity-80 transition-opacity">
+          <Link to={user ? (user.role?.toLowerCase() === 'doctor' ? '/physician' : `/${user.role?.toLowerCase() || 'patient'}`) : "/"} className="flex items-center gap-2 text-primary group cursor-pointer hover:opacity-80 transition-opacity">
             <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <Activity className="h-5 w-5 md:h-6 md:w-6" />
             </div>
@@ -71,7 +71,7 @@ export function Header({ role }: { role?: string }) {
                  className={cn(
                    "px-4 py-1.5 rounded-full transition-all duration-200",
                    location.pathname === item.path 
-                     ? "bg-background shadow-sm text-foreground font-semibold" 
+                     ? "bg-background text-foreground font-semibold" 
                      : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                  )}
                >
@@ -86,7 +86,7 @@ export function Header({ role }: { role?: string }) {
             <>
               <nav className="hidden md:flex items-center gap-4">
                  <Link to="/patient/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-2">Login</Link>
-                 <Button asChild className="cursor-pointer shadow-sm rounded-full px-6">
+                 <Button asChild className="cursor-pointer rounded-full px-6">
                    <Link to="/patient/signup">Sign up</Link>
                  </Button>
               </nav>
@@ -103,12 +103,12 @@ export function Header({ role }: { role?: string }) {
 
               <DropdownMenu>
                 <DropdownMenuTrigger className="focus:outline-none">
-                  <div className="flex items-center gap-2 rounded-full cursor-pointer pl-1.5 md:pl-2 pr-2 md:pr-3 py-1.5 shadow-sm border border-border bg-background hover:bg-accent transition-colors">
+                  <div className="flex items-center gap-2 rounded-full cursor-pointer pl-1.5 md:pl-2 pr-2 md:pr-3 py-1.5 border border-border bg-background hover:bg-accent transition-colors">
                     <div className="bg-primary/10 p-1 md:p-1.5 rounded-full">
                       <User className="h-4 w-4 text-primary" />
                     </div>
-                    <span className="text-sm font-medium max-w-[80px] truncate max-md:hidden">
-                      {user.fullName?.split(' ')[0] || user.email?.split('@')[0] || "User"}
+                    <span className="text-sm font-medium max-w-[150px] truncate max-md:hidden">
+                      {user.email || "User"}
                     </span>
                   </div>
                 </DropdownMenuTrigger>
@@ -133,7 +133,7 @@ export function Header({ role }: { role?: string }) {
 
       {/* Mobile Menu Dropdown */}
       {!user && mobileMenuOpen && (
-        <div className="absolute top-16 left-0 w-full bg-background border-b shadow-lg p-4 flex flex-col gap-2 md:hidden z-50 animate-in slide-in-from-top-2">
+        <div className="absolute top-16 left-0 w-full bg-background border-b p-4 flex flex-col gap-2 md:hidden z-50 animate-in slide-in-from-top-2">
            {navItems.map((item) => (
               <Link 
                 key={item.path}
