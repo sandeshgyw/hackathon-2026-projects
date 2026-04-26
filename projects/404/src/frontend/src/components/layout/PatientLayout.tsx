@@ -66,8 +66,12 @@ export default function PatientLayout() {
                 }`
               }
             >
-              <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                  {item.label}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -144,12 +148,16 @@ export default function PatientLayout() {
                 }`
               }
             >
-              <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-indigo-50' : 'bg-transparent'}`}>
-                <item.icon size={20} className={isActive ? 'fill-indigo-100/50' : ''} />
-              </div>
-              <span className={`text-[10px] font-bold ${isActive ? 'text-indigo-700' : 'text-gray-500'}`}>
-                {item.label}
-              </span>
+              {({ isActive }) => (
+                <>
+                  <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-indigo-50' : 'bg-transparent'}`}>
+                    <item.icon size={20} className={isActive ? 'fill-indigo-100/50' : ''} />
+                  </div>
+                  <span className={`text-[10px] font-bold ${isActive ? 'text-indigo-700' : 'text-gray-500'}`}>
+                    {item.label}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
         </div>
