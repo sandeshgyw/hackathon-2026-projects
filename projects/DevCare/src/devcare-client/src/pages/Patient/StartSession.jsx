@@ -14,6 +14,7 @@ import {
 } from '../../utils/exerciseEvaluators';
 import { generateBodyEvaluation } from '../../utils/bodyEvaluation';
 import SessionReport from '../../components/SessionReport';
+import { toastSuccess, toastError } from '../../utils/toast';
 
 const USERNAME_KEY = 'devcare_username'
 const ACCESS_TOKEN_KEY = 'devcare_access_token'
@@ -347,11 +348,11 @@ export default function StartSession() {
     try {
       const { completeSession } = await import('../../api/rehabApi');
       await completeSession(sessionId, report);
-      alert("Session report submitted successfully!");
+      toastSuccess("Session report submitted successfully!");
       navigate('/session-result');
     } catch (err) {
       console.error("Failed to submit session report:", err);
-      alert("Failed to submit report. Please try again.");
+      toastError("Failed to submit report. Please try again.");
       navigate('/session-result');
     }
   };

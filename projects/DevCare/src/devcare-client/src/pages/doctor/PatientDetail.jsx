@@ -146,7 +146,7 @@ function PatientDetail() {
             <div className="flex flex-col gap-10 md:flex-row md:items-center relative z-10">
               <div className="h-28 w-28 overflow-hidden rounded-[2rem] bg-slate-100 border-4 border-white shadow-lg">
                  <img 
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200" 
+                  src={patientInfo?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.name}&backgroundColor=f8fafc`} 
                   alt={patient.name} 
                   className="h-full w-full object-cover"
                  />

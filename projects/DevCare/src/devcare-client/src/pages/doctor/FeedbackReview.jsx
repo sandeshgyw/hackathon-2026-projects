@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { submitFeedback, getPatientSessions } from '../../api/rehabApi'
+import { toastSuccess, toastError } from '../../utils/toast'
 import { 
   MessageSquareMore, 
   Star, 
@@ -21,7 +22,6 @@ function FeedbackReview() {
 
   const [latestSessionId, setLatestSessionId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     getPatientSessions(selectedPatient)
@@ -36,12 +36,11 @@ function FeedbackReview() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!latestSessionId) {
-      setError("No completed session found for this patient.")
+      toastError("No completed session found for this patient.")
       return
     }
 
     setSubmitting(true)
-    setError('')
 
     try {
       await submitFeedback({
@@ -50,10 +49,10 @@ function FeedbackReview() {
         rating: rating,
         guidance: message
       })
-      alert('Clinical feedback has been recorded and transmitted.')
+      toastSuccess('Clinical feedback has been recorded and transmitted.')
       navigate('/doctor/dashboard')
     } catch (err) {
-      setError(err.message || 'Failed to submit feedback')
+      toastError(err.message || 'Failed to submit feedback')
     } finally {
       setSubmitting(false)
     }
@@ -175,12 +174,7 @@ function FeedbackReview() {
               <span>{submitting ? 'Transmitting...' : 'Broadcast Feedback'}</span>
             </button>
             
-            {error && (
-              <div className="mt-4 p-4 rounded-xl bg-red-50 text-red-600 text-sm font-bold flex items-center justify-center gap-2">
-                 <AlertCircle size={16} />
-                 {error}
-              </div>
-            )}
+
             
           </form>
         </div>
