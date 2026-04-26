@@ -68,8 +68,6 @@ export function Sidebar({ role }: SidebarProps) {
       { name: "Overview", href: "/patient", icon: LayoutDashboard },
       { name: "Appointments", href: "/patient/appointments", icon: CalendarHeart },
       { name: "Messages", href: "/patient/chat", icon: MessageSquare },
-      {name:"Consultants" , href:"/patient/consultants", icon:Stethoscope},
-      { name: "Appointments", href: "/patient/appointments", icon: CalendarHeart },
       { name: "Medicines", href: "/patient/medicines", icon: FileStack },
       { name: "Profile", href: "/patient/profile", icon: Settings },
 
@@ -102,9 +100,14 @@ export function Sidebar({ role }: SidebarProps) {
               <Activity className="h-5 w-5 text-emerald-600" />
             </div>
             {!isCollapsed && (window.innerWidth >= 768 || mobileOpen) && (
-              <span className="text-lg font-bold tracking-tight text-slate-900 truncate">
-                HealthCore
-              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-lg font-bold tracking-tight text-slate-900 truncate leading-none">
+                  HealthCore
+                </span>
+                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mt-1 opacity-80">
+                  {role === 'physician' ? 'Physician' : role}
+                </span>
+              </div>
             )}
           </Link>
         </div>

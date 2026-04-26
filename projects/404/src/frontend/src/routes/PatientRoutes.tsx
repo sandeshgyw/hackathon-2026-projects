@@ -6,7 +6,6 @@ import { Chat } from "@/pages/patient/Chat";
 import { Consultants } from "@/pages/patient/Consultants";
 import { Appointments } from "@/pages/patient/Appointments";
 import { Medicines } from "@/pages/patient/Medicines";
-import { PatientAppointments } from "@/pages/patient/Appointments";
 import { Login } from "@/pages/auth/Login";
 import { Signup } from "@/pages/auth/Signup";
 import { Profile } from "@/pages/shared/Profile";
@@ -32,7 +31,6 @@ export function PatientRoutes() {
           <Route path="/consultants" element={<Consultants />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/medicines" element={<Medicines />} />
-          <Route path="/appointments" element={<PatientAppointments />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="/patient" replace />} />
         </Route>

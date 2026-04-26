@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 
 export function DashboardTopBar() {
   const { user } = useSelector((state: RootState) => state.auth)
@@ -40,14 +41,7 @@ export function DashboardTopBar() {
         <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="relative hidden w-64 md:flex items-center">
-          <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="w-full rounded-xl bg-muted/50 pl-9 focus-visible:ring-emerald-500"
-          />
-        </div>
+
       </div>
 
       <div className="flex items-center gap-3">
