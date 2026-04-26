@@ -12,18 +12,9 @@ import {
   QrCode,
   Stethoscope,
 } from "lucide-react";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { generateBrief, getDrugWarnings, getPatient, getQr } from "./api/careRelayApi";
 import { compactCondition, display, shortMedName, titleCase } from "./utils/format";
+import DeepDive from "./DeepDive";
 
 const views = [
   { id: "snapshot", label: "Snapshot", icon: Stethoscope },
@@ -101,6 +92,7 @@ export default function App() {
         {activeView === "snapshot" && <Snapshot data={patientData} />}
         {activeView === "deepDive" && <DeepDive data={patientData} />}
         {activeView === "idCard" && <IDCard data={patientData} />}
+
       </main>
     </div>
   );
@@ -342,130 +334,6 @@ function DrugWarnings({ medications }) {
   );
 }
 
-function DeepDive({ data }) {
-  return (
-    <section className="page">
-      <div className="section-heading">
-        <div>
-          <div className="eyebrow">Patient timeline and trends</div>
-          <h1>Deep Dive</h1>
-        </div>
-        <div className="segment">
-          {["All", "Cardiology", "Endocrinology", "Nephrology"].map((item) => (
-            <button key={item}>{item}</button>
-          ))}
-        </div>
-      </div>
-      <TrendCharts trends={data.trends} />
-      <div className="deep-grid">
-        <Timeline timeline={data.timeline} />
-        <ConditionThreads threads={data.conditionThreads} />
-      </div>
-      <EncounterReel encounters={data.encounters} />
-    </section>
-  );
-}
-
-function TrendCharts({ trends }) {
-  const bp = (trends.blood_pressure || []).map((item) => ({
-    date: item.date,
-    systolic: item.value?.systolic,
-    diastolic: item.value?.diastolic,
-  }));
-  return (
-    <div className="chart-grid">
-      <ChartPanel title="HbA1c" data={trends.hba1c || []} dataKey="value" unit="%" />
-      <ChartPanel title="LDL" data={trends.ldl || []} dataKey="value" unit="mg/dL" />
-      <ChartPanel title="eGFR" data={trends.egfr || []} dataKey="value" unit="" />
-      <section className="panel chart-panel">
-        <h2>Blood Pressure</h2>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={bp.slice(-30)}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#d7eeee" />
-            <XAxis dataKey="date" hide />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="systolic" stroke="#0b4f4a" dot={false} />
-            <Line type="monotone" dataKey="diastolic" stroke="#00baa7" dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      </section>
-    </div>
-  );
-}
-
-function ChartPanel({ title, data, dataKey, unit }) {
-  return (
-    <section className="panel chart-panel">
-      <h2>{title}</h2>
-      <ResponsiveContainer width="100%" height={220}>
-        <LineChart data={(data || []).slice(-30)}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#d7eeee" />
-          <XAxis dataKey="date" hide />
-          <YAxis />
-          <Tooltip formatter={(value) => `${value} ${unit}`} />
-          <Line type="monotone" dataKey={dataKey} stroke="#00baa7" strokeWidth={2} dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    </section>
-  );
-}
-
-function Timeline({ timeline }) {
-  return (
-    <section className="panel">
-      <h2>Patient Timeline</h2>
-      <div className="timeline">
-        {timeline.slice(-18).reverse().map((event, index) => (
-          <div className="timeline-row" key={`${event.date}-${event.title}-${index}`}>
-            <span className={`timeline-dot ${event.type}`} />
-            <div>
-              <strong>{event.title}</strong>
-              <p>{event.date} · {event.type}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ConditionThreads({ threads }) {
-  return (
-    <section className="panel">
-      <h2>Condition Threads</h2>
-      <div className="list">
-        {threads.map((thread) => (
-          <div className="list-row" key={thread.title}>
-            <strong>{thread.title}</strong>
-            <span>
-              {thread.conditions.length} conditions · {thread.medications.length} meds ·{" "}
-              {thread.recentLabs.length} labs
-            </span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function EncounterReel({ encounters }) {
-  return (
-    <section className="panel wide-panel">
-      <h2>Recent Encounters</h2>
-      <div className="encounter-grid">
-        {encounters.slice(-12).reverse().map((encounter) => (
-          <article className="encounter-card" key={encounter.id}>
-            <strong>{encounter.type}</strong>
-            <span>{encounter.date}</span>
-            <p>{encounter.provider || "Provider not listed"}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function IDCard({ data }) {
   const [qr, setQr] = useState(null);
