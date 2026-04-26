@@ -21,6 +21,8 @@ class HomeTab extends StatefulWidget {
   final TimingWorkflow? activeTimingWorkflow;
   final HydrationWorkflow? activeHydrationWorkflow;
   final WeeklyTrackingWorkflow? activeWeeklyTrackingWorkflow;
+  final bool shouldOfferHydrationRoutine;
+  final bool shouldOfferWeeklyTracking;
   final VoidCallback onStartHydrationRoutine;
   final VoidCallback onLogHydrationGlass;
   final VoidCallback onStartWeeklyTracking;
@@ -35,6 +37,8 @@ class HomeTab extends StatefulWidget {
     required this.activeTimingWorkflow,
     required this.activeHydrationWorkflow,
     required this.activeWeeklyTrackingWorkflow,
+    required this.shouldOfferHydrationRoutine,
+    required this.shouldOfferWeeklyTracking,
     required this.onStartHydrationRoutine,
     required this.onLogHydrationGlass,
     required this.onStartWeeklyTracking,
@@ -46,10 +50,13 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   Timer? _timer;
+  late final PageController _secondaryStatusController;
+  int _secondaryStatusIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _secondaryStatusController = PageController(viewportFraction: 0.94);
     _startTimerIfNeeded();
   }
 
@@ -64,12 +71,12 @@ class _HomeTabState extends State<HomeTab> {
 
     final workflow = widget.activeTimingWorkflow;
     if (workflow != null && workflow.isActive) {
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (!mounted) return;
 
         if (widget.activeTimingWorkflow == null ||
             !widget.activeTimingWorkflow!.isActive) {
-          timer.cancel();
+          _timer?.cancel();
         } else {
           setState(() {});
         }
@@ -80,528 +87,644 @@ class _HomeTabState extends State<HomeTab> {
   @override
   void dispose() {
     _timer?.cancel();
+    _secondaryStatusController.dispose();
     super.dispose();
   }
 
-  Widget _buildMainStatusCard() {
-    if (widget.latestMedication == null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Nothing logged yet',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Go to the Meds tab and mark a medication as taken to start your care flow.',
-                style: TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
+  Widget _heroCard({
+    required IconData icon,
+    required Color accent,
+    required Color bg,
+    required String title,
+    required String value,
+    required String subtitle,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: [bg, bg.withOpacity(0.92)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      );
-    }
-
-    final bool isTimingActive = widget.activeTimingWorkflow != null &&
-        widget.activeTimingWorkflow!.isActive;
-
-    if (widget.activeTimingWorkflow != null && isTimingActive) {
-      return Card(
-        color: const Color(0xFF3B2A12),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        border: Border.all(color: accent.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.warning_amber_rounded,
-                    color: Color(0xFFFBBF24),
-                    size: 26,
+              Container(
+                height: 42,
+                width: 42,
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(0.16),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: accent,
                   ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Meal window not open yet',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFFFBBF24),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                TimingWorkflowService.formatRemaining(
-                  widget.activeTimingWorkflow!.remainingTime,
-                ),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Opens at ${TimingWorkflowService.formatAllowedTime(widget.activeTimingWorkflow!.eatAfter)}',
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFFE5E7EB),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'You can prepare food now and eat after the timer ends.',
-                style: TextStyle(
-                  color: Color(0xFFE5E7EB),
-                  height: 1.4,
                 ),
               ),
             ],
           ),
-        ),
-      );
-    }
-
-    if (widget.activeTimingWorkflow != null && !isTimingActive) {
-      return Card(
-        color: const Color(0xFF123227),
-        child: const Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    color: Color(0xFF34D399),
-                    size: 26,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'You can eat now',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF34D399),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 14),
-              Text(
-                'Your waiting period is over.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFFE5E7EB),
-                ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Go to the Meals tab for a recipe you can eat now.',
-                style: TextStyle(
-                  color: Color(0xFFE5E7EB),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (widget.activeHydrationWorkflow != null) {
-      final hydration = widget.activeHydrationWorkflow!;
-      return Card(
-        color: const Color(0xFF102A43),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.water_drop_outlined,
-                    color: Color(0xFF60A5FA),
-                    size: 26,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Hydration routine active',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF60A5FA),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                HydrationWorkflowService.buildProgressLabel(hydration),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                hydration.isCompleted
-                    ? 'You completed today’s hydration goal.'
-                    : 'Keep going to stay on track today.',
-                style: const TextStyle(
-                  color: Color(0xFFE5E7EB),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (widget.activeWeeklyTrackingWorkflow != null) {
-      final weekly = widget.activeWeeklyTrackingWorkflow!;
-
-      final bool isExceeded = weekly.isExceeded;
-      final bool isNearLimit = weekly.isNearLimit;
-
-      final Color cardColor = isExceeded
-          ? const Color(0xFF3F1D1D)
-          : isNearLimit
-              ? const Color(0xFF3B2A12)
-              : const Color(0xFF2E1065);
-
-      final Color accentColor = isExceeded
-          ? const Color(0xFFF87171)
-          : isNearLimit
-              ? const Color(0xFFFBBF24)
-              : const Color(0xFFC084FC);
-
-      final IconData icon = isExceeded
-          ? Icons.error_outline
-          : isNearLimit
-              ? Icons.warning_amber_rounded
-              : Icons.insights_outlined;
-
-      final String title = isExceeded
-          ? 'Weekly limit reached'
-          : isNearLimit
-              ? 'Weekly limit almost reached'
-              : 'Weekly tracking active';
-
-      final String helperText = isExceeded
-          ? 'This week’s next meals should avoid tracked ingredients.'
-          : isNearLimit
-              ? 'Choose lighter meals so you stay within this week’s remaining allowance.'
-              : 'Your next recipe should fit within the remaining flexibility for this week.';
-
-      final String remainingText = isExceeded
-          ? 'You have reached this week’s limit.'
-          : WeeklyTrackingWorkflowService.buildRemainingLabel(weekly);
-
-      return Card(
-        color: cardColor,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: accentColor,
-                    size: 26,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        color: accentColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                WeeklyTrackingWorkflowService.buildProgressLabel(weekly),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                remainingText,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: isExceeded
-                      ? const Color(0xFFFECACA)
-                      : isNearLimit
-                          ? const Color(0xFFE5E7EB)
-                          : const Color(0xFFE9D5FF),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                helperText,
-                style: TextStyle(
-                  color: isExceeded
-                      ? const Color(0xFFFECACA)
-                      : isNearLimit
-                          ? const Color(0xFFE5E7EB)
-                          : const Color(0xFFE9D5FF),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.latestMedication!.userHeadline,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
+          const SizedBox(height: 18),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
             ),
-            const SizedBox(height: 10),
-            Text(
-              widget.latestMedication!.userWhatHappened,
-              style: const TextStyle(
-                color: Color(0xFFCBD5E1),
-                height: 1.4,
-              ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 14.5,
+              color: Color(0xFFD6DEEA),
+              height: 1.45,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildActionCard() {
-    if (widget.latestMedication == null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'What you can do',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Start by logging a medication in the Meds tab.',
-                style: TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-            ],
+  Widget _buildPrimaryStatusCard() {
+    final timing = widget.activeTimingWorkflow;
+    final hydration = widget.activeHydrationWorkflow;
+    final weekly = widget.activeWeeklyTrackingWorkflow;
+
+    if (widget.latestMedication == null &&
+        timing == null &&
+        hydration == null &&
+        weekly == null) {
+      return _heroCard(
+        icon: Icons.health_and_safety_outlined,
+        accent: const Color(0xFF60A5FA),
+        bg: const Color(0xFF132238),
+        title: 'Nothing logged yet',
+        value: 'Ready to start',
+        subtitle:
+            'Go to the Meds tab and mark a medication as taken to begin your care flow.',
+      );
+    }
+
+    if (timing != null && timing.isActive) {
+      return _heroCard(
+        icon: Icons.schedule,
+        accent: const Color(0xFFFBBF24),
+        bg: const Color(0xFF33240E),
+        title: 'Wait before eating',
+        value: TimingWorkflowService.formatRemaining(timing.remainingTime),
+        subtitle:
+            'Meal window opens at ${TimingWorkflowService.formatAllowedTime(timing.eatAfter)}. You can prepare food now and eat after the timer ends.',
+      );
+    }
+
+    if (weekly != null && weekly.isExceeded) {
+      return _heroCard(
+        icon: Icons.error_outline,
+        accent: const Color(0xFFF87171),
+        bg: const Color(0xFF341617),
+        title: 'Weekly limit reached',
+        value: WeeklyTrackingWorkflowService.buildProgressLabel(weekly),
+        subtitle:
+            'This week’s next meals should avoid tracked ingredients until your weekly score resets.',
+      );
+    }
+
+    if (weekly != null && weekly.isNearLimit) {
+      return _heroCard(
+        icon: Icons.warning_amber_rounded,
+        accent: const Color(0xFFFBBF24),
+        bg: const Color(0xFF33240E),
+        title: 'Weekly limit almost reached',
+        value: WeeklyTrackingWorkflowService.buildProgressLabel(weekly),
+        subtitle:
+            '${WeeklyTrackingWorkflowService.buildRemainingLabel(weekly)}. Choose lighter meals so you stay within this week’s allowance.',
+      );
+    }
+
+    if (hydration != null) {
+      return _heroCard(
+        icon: Icons.water_drop_outlined,
+        accent: const Color(0xFF60A5FA),
+        bg: const Color(0xFF12283D),
+        title: 'Hydration routine active',
+        value: HydrationWorkflowService.buildProgressLabel(hydration),
+        subtitle: hydration.isCompleted
+            ? 'You completed today’s hydration goal.'
+            : 'Keep going to stay on track with today’s routine.',
+      );
+    }
+
+    if (timing != null && !timing.isActive) {
+      return _heroCard(
+        icon: Icons.check_circle_outline,
+        accent: const Color(0xFF34D399),
+        bg: const Color(0xFF132A23),
+        title: 'Meal window open',
+        value: 'You can eat now',
+        subtitle:
+            'Your waiting period is over. You can now eat meals that fit your plan.',
+      );
+    }
+
+    if (widget.shouldOfferHydrationRoutine &&
+        widget.shouldOfferWeeklyTracking) {
+      return _heroCard(
+        icon: Icons.auto_awesome_outlined,
+        accent: const Color(0xFF60A5FA),
+        bg: const Color(0xFF132238),
+        title: 'Support options ready',
+        value: '2 next steps available',
+        subtitle:
+            'Hydration support and weekly tracking are both ready below. Choose the one you want to start first.',
+      );
+    }
+
+    if (widget.shouldOfferHydrationRoutine) {
+      return _heroCard(
+        icon: Icons.water_drop_outlined,
+        accent: const Color(0xFF60A5FA),
+        bg: const Color(0xFF12283D),
+        title: 'Stay on track today',
+        value: 'Hydration support available',
+        subtitle:
+            'A hydration routine is ready to help you stay consistent for the rest of the day.',
+      );
+    }
+
+    if (widget.shouldOfferWeeklyTracking) {
+      return _heroCard(
+        icon: Icons.insights_outlined,
+        accent: const Color(0xFFC084FC),
+        bg: const Color(0xFF241241),
+        title: 'Track this week’s choices',
+        value: 'Weekly tracking available',
+        subtitle:
+            'Weekly food-awareness tracking is ready and can guide your next meal choices.',
+      );
+    }
+
+    return _heroCard(
+      icon: Icons.medication_outlined,
+      accent: const Color(0xFF60A5FA),
+      bg: const Color(0xFF132238),
+      title: widget.latestMedication?.userHeadline ?? 'Care flow active',
+      value: widget.latestMedication?.name ?? 'Medication logged',
+      subtitle: widget.latestMedication?.userWhatHappened ??
+          'Your care flow is active.',
+    );
+  }
+
+  Widget _chip({
+    required IconData icon,
+    required String label,
+    required Color bg,
+    required Color fg,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: fg.withOpacity(0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: fg),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: fg,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveSupportChips() {
+    final timing = widget.activeTimingWorkflow;
+    final hydration = widget.activeHydrationWorkflow;
+    final weekly = widget.activeWeeklyTrackingWorkflow;
+
+    final chips = <Widget>[];
+
+    if (timing != null) {
+      chips.add(
+        _chip(
+          icon: timing.isActive ? Icons.schedule : Icons.check_circle_outline,
+          label: timing.isActive
+              ? TimingWorkflowService.formatRemaining(timing.remainingTime)
+              : 'Meal ready',
+          bg: timing.isActive
+              ? const Color(0xFF33240E)
+              : const Color(0xFF132A23),
+          fg: timing.isActive
+              ? const Color(0xFFFBBF24)
+              : const Color(0xFF34D399),
         ),
       );
     }
 
-    final bool isSupportRoutineMedication =
-        widget.latestMedication!.workflowType == 'support_routine';
-
-    final bool isWeeklyTrackingMedication =
-        widget.latestMedication!.workflowType == 'weekly_tracking';
-
-    if (isSupportRoutineMedication && widget.activeHydrationWorkflow == null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'What you can do now',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Hydration support can help you stay consistent today.',
-                style: TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: widget.onStartHydrationRoutine,
-                child: const Text('Start Hydration Routine'),
-              ),
-            ],
-          ),
+    if (hydration != null) {
+      chips.add(
+        _chip(
+          icon: Icons.water_drop_outlined,
+          label: HydrationWorkflowService.buildProgressLabel(hydration),
+          bg: const Color(0xFF12283D),
+          fg: const Color(0xFF60A5FA),
         ),
       );
     }
 
-    if (isWeeklyTrackingMedication &&
-        widget.activeWeeklyTrackingWorkflow == null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'What you can do now',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Weekly food-awareness tracking can help guide your next meal.',
-                style: TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: widget.onStartWeeklyTracking,
-                child: const Text('Start Weekly Tracking'),
-              ),
-            ],
-          ),
+    if (weekly != null) {
+      chips.add(
+        _chip(
+          icon: weekly.isExceeded
+              ? Icons.error_outline
+              : weekly.isNearLimit
+                  ? Icons.warning_amber_rounded
+                  : Icons.insights_outlined,
+          label: '${weekly.usedThisWeek}/${weekly.weeklyLimit}',
+          bg: weekly.isExceeded
+              ? const Color(0xFF341617)
+              : weekly.isNearLimit
+                  ? const Color(0xFF33240E)
+                  : const Color(0xFF241241),
+          fg: weekly.isExceeded
+              ? const Color(0xFFF87171)
+              : weekly.isNearLimit
+                  ? const Color(0xFFFBBF24)
+                  : const Color(0xFFC084FC),
         ),
       );
     }
 
-    if (widget.activeHydrationWorkflow != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'What you can do now',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle(title: 'Active support'),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: chips,
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildSecondaryStatusCards() {
+    final cards = <Widget>[];
+    final timing = widget.activeTimingWorkflow;
+    final hydration = widget.activeHydrationWorkflow;
+    final weekly = widget.activeWeeklyTrackingWorkflow;
+
+    final bool primaryIsTiming = timing != null && timing.isActive;
+    final bool primaryIsWeeklyExceeded = weekly != null && weekly.isExceeded;
+    final bool primaryIsWeeklyNear =
+        weekly != null && weekly.isNearLimit && !primaryIsWeeklyExceeded;
+    final bool primaryIsHydration = !primaryIsTiming &&
+        !primaryIsWeeklyExceeded &&
+        !primaryIsWeeklyNear &&
+        hydration != null;
+    final bool primaryIsMealReady = !primaryIsTiming &&
+        !primaryIsWeeklyExceeded &&
+        !primaryIsWeeklyNear &&
+        hydration == null &&
+        timing != null &&
+        !timing.isActive;
+
+    if (timing != null && !primaryIsTiming && !primaryIsMealReady) {
+      cards.add(
+        _miniStatusCard(
+          icon: timing.isActive ? Icons.schedule : Icons.check_circle_outline,
+          accent: timing.isActive
+              ? const Color(0xFFFBBF24)
+              : const Color(0xFF34D399),
+          bg: timing.isActive
+              ? const Color(0xFF33240E)
+              : const Color(0xFF132A23),
+          title: timing.isActive ? 'Timing active' : 'Meal ready',
+          value: timing.isActive
+              ? TimingWorkflowService.formatRemaining(timing.remainingTime)
+              : 'Window open',
+          subtitle: timing.isActive
+              ? 'Meal opens at ${TimingWorkflowService.formatAllowedTime(timing.eatAfter)}'
+              : 'You can eat now.',
+        ),
+      );
+    }
+
+    if (hydration != null && !primaryIsHydration) {
+      cards.add(
+        _miniStatusCard(
+          icon: Icons.water_drop_outlined,
+          accent: const Color(0xFF60A5FA),
+          bg: const Color(0xFF12283D),
+          title: 'Hydration',
+          value: HydrationWorkflowService.buildProgressLabel(hydration),
+          subtitle: hydration.isCompleted
+              ? 'Goal completed for today.'
+              : 'Keep tracking today’s glasses.',
+        ),
+      );
+    }
+
+    if (weekly != null && !primaryIsWeeklyExceeded && !primaryIsWeeklyNear) {
+      cards.add(
+        _miniStatusCard(
+          icon: Icons.insights_outlined,
+          accent: const Color(0xFFC084FC),
+          bg: const Color(0xFF241241),
+          title: 'Weekly tracking',
+          value: WeeklyTrackingWorkflowService.buildProgressLabel(weekly),
+          subtitle: WeeklyTrackingWorkflowService.buildRemainingLabel(weekly),
+        ),
+      );
+    }
+
+    if (timing != null && primaryIsMealReady) {
+      if (hydration != null || weekly != null) {
+        cards.add(
+          _miniStatusCard(
+            icon: Icons.check_circle_outline,
+            accent: const Color(0xFF34D399),
+            bg: const Color(0xFF132A23),
+            title: 'Meal ready',
+            value: 'Window open',
+            subtitle: 'You can eat now.',
+          ),
+        );
+      }
+    }
+
+    return cards;
+  }
+
+  Widget _miniStatusCard({
+    required IconData icon,
+    required Color accent,
+    required Color bg,
+    required String title,
+    required String value,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accent.withOpacity(0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: accent, size: 22),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              color: accent,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Color(0xFFD6DEEA),
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecondaryStatusesSection() {
+    final cards = _buildSecondaryStatusCards();
+    if (cards.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle(title: 'Also active'),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 185,
+          child: PageView.builder(
+            controller: _secondaryStatusController,
+            itemCount: cards.length,
+            onPageChanged: (index) {
+              setState(() {
+                _secondaryStatusIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final isLast = index == cards.length - 1;
+              return Padding(
+                padding: EdgeInsets.only(right: isLast ? 0 : 12),
+                child: cards[index],
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            cards.length,
+            (index) => AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              height: 8,
+              width: index == _secondaryStatusIndex ? 22 : 8,
+              decoration: BoxDecoration(
+                color: index == _secondaryStatusIndex
+                    ? const Color(0xFF60A5FA)
+                    : const Color(0xFF314055),
+                borderRadius: BorderRadius.circular(99),
               ),
-              const SizedBox(height: 8),
-              Text(
-                widget.activeHydrationWorkflow!.isCompleted
-                    ? 'You have completed today’s hydration goal.'
-                    : 'Log a glass each time you drink water to track your progress.',
-                style: const TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _supportInfoRow({
+    required IconData icon,
+    required Color accent,
+    required String title,
+    required String subtitle,
+    String? buttonLabel,
+    VoidCallback? onPressed,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF182234),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withOpacity(0.18)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 38,
+            width: 38,
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: accent, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              if (!widget.activeHydrationWorkflow!.isCompleted) ...[
-                const SizedBox(height: 14),
-                ElevatedButton(
-                  onPressed: widget.onLogHydrationGlass,
-                  child: const Text('Log 1 Glass'),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFFB6C2D1),
+                    height: 1.35,
+                  ),
                 ),
+                if (buttonLabel != null && onPressed != null) ...[
+                  const SizedBox(height: 10),
+                  OutlinedButton(
+                    onPressed: onPressed,
+                    child: Text(buttonLabel),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionsSection() {
+    final items = <Widget>[];
+
+    if (widget.shouldOfferHydrationRoutine) {
+      items.add(
+        _supportInfoRow(
+          icon: Icons.water_drop_outlined,
+          accent: const Color(0xFF60A5FA),
+          title: 'Hydration support available',
+          subtitle:
+              'Start a hydration routine to break today’s goal into a simple trackable plan.',
+          buttonLabel: 'Start hydration routine',
+          onPressed: widget.onStartHydrationRoutine,
+        ),
+      );
+    }
+
+    if (widget.shouldOfferWeeklyTracking) {
+      items.add(
+        _supportInfoRow(
+          icon: Icons.insights_outlined,
+          accent: const Color(0xFFC084FC),
+          title: 'Weekly tracking available',
+          subtitle:
+              'Start weekly tracking so meal suggestions can adapt to your remaining allowance.',
+          buttonLabel: 'Start weekly tracking',
+          onPressed: widget.onStartWeeklyTracking,
+        ),
+      );
+    }
+
+    if (widget.activeHydrationWorkflow != null &&
+        !widget.activeHydrationWorkflow!.isCompleted) {
+      items.add(
+        _supportInfoRow(
+          icon: Icons.local_drink_outlined,
+          accent: const Color(0xFF60A5FA),
+          title: 'Hydration progress',
+          subtitle:
+              'Tap below whenever you finish a glass to keep your routine updated.',
+          buttonLabel: 'Log 1 glass',
+          onPressed: widget.onLogHydrationGlass,
         ),
       );
     }
 
     if (widget.activeTimingWorkflow != null &&
         widget.activeTimingWorkflow!.isActive) {
-      return Card(
-        child: const Padding(
-          padding: EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'What you can do now',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Use the Meals tab to generate a recipe now, but save eating for later when the timer ends.',
-                style: TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
+      items.add(
+        _supportInfoRow(
+          icon: Icons.restaurant_menu,
+          accent: const Color(0xFFFBBF24),
+          title: 'Meal planning available',
+          subtitle:
+              'Use the Meals tab to generate a recipe now and eat it once the timer ends.',
         ),
       );
     }
 
-    if (widget.activeTimingWorkflow != null &&
-        !widget.activeTimingWorkflow!.isActive) {
+    if (items.isEmpty) {
       return Card(
-        child: const Padding(
-          padding: EdgeInsets.all(18),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'What you can do now',
+              const Text(
+                'Available actions',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
-                'Your meal window is open. You can now generate and eat your next meal.',
-                style: TextStyle(
-                  color: Color(0xFFCBD5E1),
+                widget.latestMedication?.userNextAction ??
+                    'No actions available right now.',
+                style: const TextStyle(
+                  color: Color(0xFFB6C2D1),
                   height: 1.4,
                 ),
               ),
@@ -618,155 +741,31 @@ class _HomeTabState extends State<HomeTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'What you can do now',
+              'Available actions',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              widget.latestMedication!.userNextAction,
-              style: const TextStyle(
-                color: Color(0xFFCBD5E1),
-                height: 1.4,
-              ),
-            ),
+            const SizedBox(height: 14),
+            ...[
+              for (int i = 0; i < items.length; i++) ...[
+                items[i],
+                if (i != items.length - 1) const SizedBox(height: 12),
+              ]
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSupportCard() {
-    if (widget.latestMedication == null) {
-      return const SizedBox.shrink();
-    }
-
-    if (widget.activeHydrationWorkflow != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Today’s support',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '${widget.activeHydrationWorkflow!.sourceMedicationName} hydration routine is active.',
-                style: const TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (widget.activeTimingWorkflow != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Today’s support',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                widget.activeTimingWorkflow!.isActive
-                    ? 'Meal reminder is active.'
-                    : 'Meal reminder completed.',
-                style: const TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (widget.activeWeeklyTrackingWorkflow != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Today’s support',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '${widget.activeWeeklyTrackingWorkflow!.sourceMedicationName} weekly tracking is active.',
-                style: const TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (widget.latestSuggestion != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Today’s support',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.latestSuggestion!.description,
-                style: const TextStyle(
-                  color: Color(0xFFCBD5E1),
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 14),
-              ElevatedButton(
-                onPressed: widget.onActivateWorkflow,
-                child: Text(widget.latestSuggestion!.actionLabel),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final hasSupport = widget.activeTimingWorkflow != null ||
+        widget.activeHydrationWorkflow != null ||
+        widget.activeWeeklyTrackingWorkflow != null;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -783,18 +782,21 @@ class _HomeTabState extends State<HomeTab> {
           const Text(
             'Adaptive care workflows for your day',
             style: TextStyle(
-              color: Color(0xFF94A3B8),
+              color: Color(0xFF8FA1B8),
               fontSize: 15,
             ),
           ),
           const SizedBox(height: 24),
           const SectionTitle(title: 'Right now'),
-          _buildMainStatusCard(),
+          _buildPrimaryStatusCard(),
+          if (hasSupport) ...[
+            const SizedBox(height: 20),
+            _buildActiveSupportChips(),
+            const SizedBox(height: 20),
+            _buildSecondaryStatusesSection(),
+          ],
           const SizedBox(height: 24),
-          const SectionTitle(title: 'What you can do'),
-          _buildActionCard(),
-          const SizedBox(height: 24),
-          _buildSupportCard(),
+          _buildActionsSection(),
         ],
       ),
     );
